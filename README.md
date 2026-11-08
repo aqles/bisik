@@ -6,7 +6,7 @@ A two-person chat that deliberately keeps nothing.
 
 Bisik is a web app (installable as a PWA) for talking 1-on-1 under encryption. No accounts, no contact lists, no database. Two people enter the same code and talk. End the session and the messages end with it — no history left anywhere.
 
-**Try it live: https://bisik.ednasalam.com** (version 0.4.4)
+**Try it live: https://bisik.ednasalam.com** (version 0.4.5)
 
 ![The Bisik join screen — one code field, one button, nothing else](docs/screenshot.png)
 
@@ -34,7 +34,7 @@ When you enter a code, your browser derives two things from it:
 - **The room id** — derived by the same PBKDF2 process (not a fast hash), this is the only thing sent to the server, just to pair up the two browsers using the same code. A room holds at most 2 people. Because the derivation is expensive to compute, the room id can't be used to grind through possible codes offline.
 - **The encryption key** (PBKDF2 + AES-GCM 256-bit) — derived together with the room id in a single PBKDF2 run, and it never leaves the browser. Every message and image is encrypted in the sender's browser first, and only opened again in the recipient's.
 
-The relay server in the middle only forwards the resulting random-looking encrypted text from RAM. It writes nothing to disk, logs no message contents, and never queues anything: if your friend is offline, your message is discarded immediately and you're told so. Chat history exists only in the memory of the open page — refresh the page and it's gone.
+The relay server in the middle only forwards the resulting random-looking encrypted text from RAM. It writes nothing to disk, logs no message contents, and never queues anything: if your friend is offline, your message is discarded immediately and you're told so. Every message you send carries a delivery mark — ✓ sent, ✓✓ delivered once your friend's app has actually shown it, or ✕ not delivered — so you're never left guessing whether something arrived. Chat history exists only in the memory of the open page — refresh the page and it's gone.
 
 ## The limits, stated plainly
 
@@ -51,10 +51,10 @@ Needs Node.js 20+.
 ```bash
 npm install
 npm start        # http://localhost:3000
-npm test         # end-to-end suite (12 checks)
+npm test         # end-to-end suite (15 checks)
 ```
 
-The test suite uses the exact same crypto module the browser uses, against a real server: same code can chat, only ciphertext crosses the server, a different code receives nothing, an offline recipient's message is dropped, reconnect works after a hard drop and never counts your own reconnecting tab as a second person, a 1 MB image arrives intact, message flooding is cut at the cap, and connections from other websites are refused.
+The test suite uses the exact same crypto module the browser uses, against a real server: same code can chat, only ciphertext crosses the server, a different code receives nothing, an offline recipient's message is dropped, reconnect works after a hard drop and never counts your own reconnecting tab as a second person, a 1 MB image arrives intact, message flooding is cut at the cap, delivery receipts (acks) are relayed and a dropped message names exactly which one died, and connections from other websites are refused.
 
 This single Node process serves the app files and the WebSocket relay together, so deployment only needs one place that can run a long-lived Node process (a VPS, Fly.io, Render, …). The instance at https://bisik.ednasalam.com runs on Render; `render.yaml` in this repo is its configuration. In production, run it behind HTTPS — WebCrypto and PWAs only work in secure contexts (HTTPS or localhost).
 

@@ -29,10 +29,12 @@ export async function deriveSession(code) {
   return { key, room };
 }
 
-export async function encryptWith(key, kind, data, mime) {
+export async function encryptWith(key, kind, data, mime, id) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data);
-  return JSON.stringify({ kind, mime, iv: b64(iv), ct: b64(ct) });
+  // `id` is a random per-message receipt id (not content): the receiver
+  // echoes it back in an ack so the sender can mark the message delivered.
+  return JSON.stringify({ kind, mime, id, iv: b64(iv), ct: b64(ct) });
 }
 
 export async function decryptWith(key, envelope) {

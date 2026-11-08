@@ -23,10 +23,29 @@ const seat = crypto.randomUUID();
 let ownTabPeer = false;       // the other seat is this browser's own other tab
 let leaving = false;          // true when the user ends the session themselves
 let reconnectTimer = null, reconnectAttempts = 0, slowTimer = null;
-const pending = new Map(); // id -> bubble element (to flag failures when the peer is offline)
+const pending = new Map(); // message id -> { el, tick, timer } while awaiting its receipt
 
-const encrypt = (kind, data, mime) => encryptWith(key, kind, data, mime);
+const encrypt = (kind, data, mime, id) => encryptWith(key, kind, data, mime, id);
 const decrypt = (envelope) => decryptWith(key, envelope);
+
+// Delivery receipts for our own messages, WhatsApp-style but honest:
+// ✓ sent → ✓✓ delivered (your friend's app showed it and acked) or
+// ✕ not delivered (the server dropped it — your friend is offline). If no
+// ack comes back in 6 s the mark stays "unconfirmed" rather than faking success.
+function trackSent(id, el) {
+  const tick = document.createElement('div');
+  tick.className = 'meta'; tick.textContent = '✓ sent';
+  el.append(tick);
+  const timer = setTimeout(() => { pending.delete(id); tick.textContent = '✓ sent — unconfirmed'; }, 6000);
+  pending.set(id, { el, tick, timer });
+}
+function resolveSent(id, delivered) {
+  const p = pending.get(id); if (!p) return;
+  pending.delete(id); clearTimeout(p.timer);
+  if (delivered) { p.tick.textContent = '✓✓ delivered'; return; }
+  p.el.classList.add('failed'); p.tick.classList.add('bad');
+  p.tick.textContent = '✕ not delivered — gone';
+}
 
 function systemNote(text) {
   const el = document.createElement('div');
@@ -146,15 +165,12 @@ async function onMessage(ev) {
     systemNote(m.online ? 'Your friend joined.' : 'Your friend left — the next message will be lost.');
     flashTitle(m.online ? '• Your friend joined — Bisik' : '• Your friend left — Bisik');
   } else if (m.type === 'dropped') {
-    // The server discarded a message because the recipient isn't there. Flag it, never resend.
-    systemNote("One message wasn't delivered because your friend is offline — it has been discarded.");
-    for (const el of pending.values()) {
-      el.classList.add('failed');
-      const meta = document.createElement('div');
-      meta.className = 'meta'; meta.textContent = 'not delivered — gone';
-      el.append(meta);
-    }
-    pending.clear();
+    // The server discarded a message because the recipient isn't there.
+    // Flag exactly that message — never resend (gone means gone).
+    if (m.id) resolveSent(m.id, false);
+    else for (const id of [...pending.keys()]) resolveSent(id, false);
+  } else if (m.type === 'ack') {
+    resolveSent(m.id, true); // your friend's app showed the message
   } else if (m.type === 'msg') {
     try {
       const m2 = await decrypt(m.data);
@@ -165,16 +181,16 @@ async function onMessage(ev) {
         img.alt = 'Encrypted image from your friend';
         el.append(img);
       });
+      // Shown on screen: acknowledge it so the sender gets their ✓✓.
+      if (m2.id && ws.readyState === 1) ws.send(JSON.stringify({ type: 'ack', id: m2.id }));
     } catch {
       systemNote("A message arrived that can't be opened with your code.");
     }
   }
 }
 
-async function sendPayload(envelope) {
-  const id = crypto.randomUUID();
+function sendPayload(envelope, id) {
   ws.send(JSON.stringify({ type: 'msg', id, data: envelope }));
-  return id;
 }
 
 $('#gen').addEventListener('click', () => {
@@ -218,10 +234,10 @@ $('#composer').addEventListener('submit', async (e) => {
     return;
   }
   $('#text').value = '';
+  const id = crypto.randomUUID();
   const el = addBubble(true, (b) => { b.textContent = text; });
-  const id = await sendPayload(await encrypt('text', enc.encode(text)));
-  pending.set(id, el);
-  setTimeout(() => pending.delete(id), 1500);
+  trackSent(id, el);
+  sendPayload(await encrypt('text', enc.encode(text), undefined, id), id);
 });
 
 $('#attach').addEventListener('click', () => $('#file').click());
@@ -232,14 +248,14 @@ $('#file').addEventListener('change', async () => {
   if (!ws || ws.readyState !== 1) { systemNote("Not connected — image wasn't sent."); return; }
   if (file.size > 5 * 1024 * 1024) { systemNote('That image is too big — 5 MB max.'); return; }
   const buf = await file.arrayBuffer();
+  const id = crypto.randomUUID();
   const el = addBubble(true, (b) => {
     const img = document.createElement('img');
     img.src = URL.createObjectURL(file); img.alt = 'Image you sent';
     b.append(img);
   });
-  const id = await sendPayload(await encrypt('image', buf, file.type));
-  pending.set(id, el);
-  setTimeout(() => pending.delete(id), 1500);
+  trackSent(id, el);
+  sendPayload(await encrypt('image', buf, file.type, id), id);
 });
 
 $('#leave').addEventListener('click', () => { leaving = true; location.reload(); }); // reload = everything gone

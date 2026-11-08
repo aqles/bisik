@@ -52,6 +52,7 @@ button.ghost { background: #fff; border-color: #cbd5e1; color: #0f172a; }
 .bubble.failed { opacity: .55; }
 .bubble img { max-width: 100%; border-radius: 10px; display: block; }
 .bubble .meta { font-size: 11px; margin-top: 4px; opacity: .75; }
+.bubble .meta.bad { color: #b91c1c; opacity: 1; font-weight: 600; }
 .system { align-self: center; font-size: 13px; color: #64748b; text-align: center; }
 #composer {
   display: flex; gap: 8px; padding: 12px; background: #fff; border-top: 2px solid #e2e8f0;

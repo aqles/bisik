@@ -4,7 +4,7 @@
 // Network-first strategy: the latest version always wins, the cache is just
 // an offline fallback. (The old cache-first version made updates depend on
 // a human remembering to rename the cache every release.)
-const CACHE = 'bisik-v7';
+const CACHE = 'bisik-v8';
 const SHELL = ['/', '/index.html', '/style.css', '/app.js', '/crypto.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/privacy.html', '/terms.html', '/security.html'];
 
 self.addEventListener('install', (e) => {

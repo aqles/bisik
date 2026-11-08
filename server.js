@@ -109,6 +109,15 @@ wss.on('connection', (ws, req) => {
       return;
     }
 
+    // Delivery receipt: a bare id echoed by the receiver, relayed to the
+    // sender. Carries no content; the sender marks that message delivered.
+    if (m.type === 'ack' && room && typeof m.id === 'string') {
+      const set = rooms.get(room);
+      const peer = set && [...set].find((p) => p !== ws);
+      if (peer) peer.send(JSON.stringify({ type: 'ack', id: m.id }));
+      return;
+    }
+
     if (m.type === 'msg' && room && typeof m.data === 'string') {
       const now = Date.now();
       if (now - winStart > 1000) { winStart = now; winCount = 0; }
@@ -116,8 +125,9 @@ wss.on('connection', (ws, req) => {
       const set = rooms.get(room);
       const peer = set && [...set].find((p) => p !== ws);
       if (!peer) {
-        // Recipient offline: the message is discarded — not queued, not stored.
-        ws.send(JSON.stringify({ type: 'dropped' }));
+        // Recipient offline: the message is discarded — not queued, not
+        // stored. The id tells the sender exactly which message died.
+        ws.send(JSON.stringify({ type: 'dropped', id: typeof m.id === 'string' ? m.id : undefined }));
         return;
       }
       peer.send(JSON.stringify({ type: 'msg', data: m.data }));

@@ -108,6 +108,32 @@ try {
   check('foreign origin: rejected (cannot join)', !evilJoined && evilClosed);
   try { evil.close(); } catch { /* ignore */ }
 
+  // (9) delivery receipts: the receiver's ack must be relayed back to the
+  // sender, and a dropped message must name WHICH message died. Fresh pair
+  // on purpose: A's socket just tripped the flood cap in test (7), and its
+  // 1-second window would silently eat this message too.
+  const { key: keyR } = await deriveSession('receipt-room-42');
+  const r1 = await client(), r2 = await client();
+  await join(r1, 'receipt-room-42'); await join(r2, 'receipt-room-42');
+  const rdata = await encryptWith(keyR, 'text', enc.encode('receipt-test'), undefined, 'msg-1');
+  r1.send(JSON.stringify({ type: 'msg', data: rdata, id: 'msg-1' }));
+  await wait(250);
+  const r2Got = r2.inbox.find((m) => m.type === 'msg');
+  check('receipt: message reaches the peer with its id inside the payload',
+    !!r2Got && (await decryptWith(keyR, r2Got.data)).id === 'msg-1');
+  r2.send(JSON.stringify({ type: 'ack', id: 'msg-1' }));
+  await wait(200);
+  check('receipt: the peer\'s ack is relayed back to the sender',
+    r1.inbox.some((m) => m.type === 'ack' && m.id === 'msg-1'));
+  r1.close(); r2.close();
+  const solo2 = await client(); await join(solo2, 'receipt-solo-room');
+  solo2.inbox.length = 0;
+  solo2.send(JSON.stringify({ type: 'msg', data: 'AAAA', id: 'msg-2' }));
+  await wait(200);
+  check('receipt: a dropped message names its own id',
+    solo2.inbox.some((m) => m.type === 'dropped' && m.id === 'msg-2'));
+  solo2.close();
+
   // (8) seat replacement: the same tab reconnecting while its old socket still
   // lingers must REPLACE itself — not count as a second person ("friend").
   const SEAT_CODE = 'seat-reconnect-room';
