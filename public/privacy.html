@@ -3,58 +3,64 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Privacy — Bisik</title>
+<title data-i18n="priv.title">Privacy — Bisik</title>
 <meta name="theme-color" content="#f59e0b">
 <link rel="icon" href="/icon-192.png">
 <link rel="stylesheet" href="/style.css">
+<script src="/i18n.js"></script>
 </head>
 <body>
 <main class="doc">
-  <a class="back" href="/">← Back to Bisik</a>
-  <h1>Privacy Policy</h1>
-  <p class="updated">Last updated: November 8, 2026</p>
+  <a class="back" href="/" data-i18n="back">← Back to Bisik</a>
+  <h1 data-i18n="priv.h1">Privacy Policy</h1>
+  <p class="updated" data-i18n="updated">Last updated: November 8, 2026</p>
 
-  <p>Bisik is built on one principle: we can't hand over, sell, or leak the contents
+  <p data-i18n-html="priv.intro">Bisik is built on one principle: we can't hand over, sell, or leak the contents
   of your conversations because <b>we never have them</b>.</p>
 
-  <h2>What we don't collect</h2>
-  <p>There are no accounts and no sign-up, so there is no name, email address, phone
+  <h2 data-i18n="priv.h2a">What we don't collect</h2>
+  <p data-i18n="priv.pa">There are no accounts and no sign-up, so there is no name, email address, phone
   number, or password to store. There is no database. No analytics, no ads, no
   third-party trackers.</p>
 
-  <h2>Message and image contents</h2>
-  <p>Messages and images are encrypted in your browser before they are sent. The relay
+  <h2 data-i18n="priv.h2b">Message and image contents</h2>
+  <p data-i18n="priv.pb">Messages and images are encrypted in your browser before they are sent. The relay
   server only forwards that encrypted output from memory (RAM) to the person you're
   talking to — it never writes it to disk, never logs it, and never queues it. If the
   other person is offline, your message is discarded on the spot. Chat history exists
   only in the open tab; closing or refreshing the page erases it.</p>
 
-  <h2>Your code</h2>
-  <p>Your shared code is never sent to the server. What is sent is only the room id —
+  <h2 data-i18n="priv.h2c">Your code</h2>
+  <p data-i18n="priv.pc">Your shared code is never sent to the server. What is sent is only the room id —
   a slow derivation (PBKDF2) of the code, so the server can pair up two people using
   the same code without the id being practical to reverse into the code itself. The
   encryption key is derived and used only inside your browsers.</p>
 
-  <h2>What is stored on your device</h2>
-  <p>If you install Bisik as a PWA, your browser caches the app's files (pages, styles,
+  <h2 data-i18n="priv.h2d">What is stored on your device</h2>
+  <p data-i18n="priv.pd">If you install Bisik as a PWA, your browser caches the app's files (pages, styles,
   icons) so it opens quickly. Conversation contents are never part of that. Bisik does
   not use localStorage, sessionStorage, IndexedDB, or cookies to store chat data.</p>
 
-  <h2>The honest limits</h2>
-  <p>For a connection to happen at all, your IP address is necessarily visible to the
+  <h2 data-i18n="priv.h2e">The honest limits</h2>
+  <p data-i18n="priv.pe">For a connection to happen at all, your IP address is necessarily visible to the
   network and to the hosting provider the relay runs on (currently Render), just like
   any website. The hosting provider may keep standard network logs on their side,
   which are outside this app's control. What we can guarantee from the app's side:
   message contents are never logged or stored anywhere.</p>
 
-  <h2>Contact</h2>
-  <p>Privacy questions can be sent via the contact page at
+  <h2 data-i18n="priv.h2f">Contact</h2>
+  <p data-i18n-html="priv.pf">Privacy questions can be sent via the contact page at
   <a href="https://www.ednasalam.com">ednasalam.com</a>.</p>
 
+  <div class="lang-switch" role="group" aria-label="Language / Bahasa">
+    <button type="button" class="ghost" data-lang-set="en" aria-pressed="true">EN</button>
+    <button type="button" class="ghost" data-lang-set="id" aria-pressed="false">ID</button>
+  </div>
+
   <footer class="links">
-    <a href="/privacy.html">Privacy</a> ·
-    <a href="/terms.html">Terms</a> ·
-    <a href="/security.html">Security</a>
+    <a href="/privacy.html" data-i18n="linkPrivacy">Privacy</a> ·
+    <a href="/terms.html" data-i18n="linkTerms">Terms</a> ·
+    <a href="/security.html" data-i18n="linkSecurity">Security</a>
   </footer>
 </main>
 </body>

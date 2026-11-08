@@ -71,3 +71,8 @@ button.ghost { background: #fff; border-color: #cbd5e1; color: #0f172a; }
 .doc a.back { color: #b45309; text-decoration: none; font-weight: 600; }
 .doc .updated { color: #64748b; font-size: 14px; }
 .doc footer { margin-top: 40px; }
+
+/* Language switch (EN | ID) — session-only choice, nothing is stored. */
+.lang-switch { display: flex; gap: 8px; justify-content: center; margin-top: 20px; }
+.lang-switch button[aria-pressed="true"] { font-weight: 700; text-decoration: underline; }
+.doc .lang-switch { justify-content: flex-start; }

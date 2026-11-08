@@ -3,42 +3,48 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Terms — Bisik</title>
+<title data-i18n="terms.title">Terms — Bisik</title>
 <meta name="theme-color" content="#f59e0b">
 <link rel="icon" href="/icon-192.png">
 <link rel="stylesheet" href="/style.css">
+<script src="/i18n.js"></script>
 </head>
 <body>
 <main class="doc">
-  <a class="back" href="/">← Back to Bisik</a>
-  <h1>Terms of Use</h1>
-  <p class="updated">Last updated: November 8, 2026</p>
+  <a class="back" href="/" data-i18n="back">← Back to Bisik</a>
+  <h1 data-i18n="terms.h1">Terms of Use</h1>
+  <p class="updated" data-i18n="updated">Last updated: November 8, 2026</p>
 
-  <h2>The service</h2>
-  <p>Bisik is a two-person conversation tool that is temporary by design: no accounts,
+  <h2 data-i18n="terms.h2a">The service</h2>
+  <p data-i18n="terms.pa">Bisik is a two-person conversation tool that is temporary by design: no accounts,
   no history, no session recovery. By using Bisik you accept that nature — including
   that a message sent while the other person is offline will be lost, and that a
   finished conversation can never be reopened in any way.</p>
 
-  <h2>Your responsibility</h2>
-  <p>You are responsible for the code you create and share, and for who you share it
+  <h2 data-i18n="terms.h2b">Your responsibility</h2>
+  <p data-i18n="terms.pb">You are responsible for the code you create and share, and for who you share it
   with. Anyone holding the same code can enter the same room. Don't use Bisik for
   anything unlawful. We cannot moderate conversation contents — technically cannot,
   because they are encrypted and never reach us in readable form.</p>
 
-  <h2>Availability</h2>
-  <p>Bisik is provided as-is, without any warranty. It runs on free hosting that can
+  <h2 data-i18n="terms.h2c">Availability</h2>
+  <p data-i18n="terms.pc">Bisik is provided as-is, without any warranty. It runs on free hosting that can
   sleep while unused (the first load can take a few dozen seconds to wake it) and may
   be unavailable at times. Don't rely on Bisik as your only channel for emergency
   communication.</p>
 
-  <h2>Changes</h2>
-  <p>These terms may change; the latest version always lives on this page.</p>
+  <h2 data-i18n="terms.h2d">Changes</h2>
+  <p data-i18n="terms.pd">These terms may change; the latest version always lives on this page.</p>
+
+  <div class="lang-switch" role="group" aria-label="Language / Bahasa">
+    <button type="button" class="ghost" data-lang-set="en" aria-pressed="true">EN</button>
+    <button type="button" class="ghost" data-lang-set="id" aria-pressed="false">ID</button>
+  </div>
 
   <footer class="links">
-    <a href="/privacy.html">Privacy</a> ·
-    <a href="/terms.html">Terms</a> ·
-    <a href="/security.html">Security</a>
+    <a href="/privacy.html" data-i18n="linkPrivacy">Privacy</a> ·
+    <a href="/terms.html" data-i18n="linkTerms">Terms</a> ·
+    <a href="/security.html" data-i18n="linkSecurity">Security</a>
   </footer>
 </main>
 </body>

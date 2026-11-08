@@ -3,27 +3,28 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Security — Bisik</title>
+<title data-i18n="sec.title">Security — Bisik</title>
 <meta name="theme-color" content="#f59e0b">
 <link rel="icon" href="/icon-192.png">
 <link rel="stylesheet" href="/style.css">
+<script src="/i18n.js"></script>
 </head>
 <body>
 <main class="doc">
-  <a class="back" href="/">← Back to Bisik</a>
-  <h1>How Bisik's Security Works</h1>
-  <p class="updated">Last updated: November 8, 2026</p>
+  <a class="back" href="/" data-i18n="back">← Back to Bisik</a>
+  <h1 data-i18n="sec.h1">How Bisik's Security Works</h1>
+  <p class="updated" data-i18n="updated">Last updated: November 8, 2026</p>
 
-  <h2>From a code to a key</h2>
-  <p>When you type a code, your browser derives two things from it. One PBKDF2 process
+  <h2 data-i18n="sec.h2a">From a code to a key</h2>
+  <p data-i18n="sec.pa">When you type a code, your browser derives two things from it. One PBKDF2 process
   (600,000 iterations) produces both at once: the room id — the only thing ever sent to
   the server, just to pair up two browsers using the same code (a room holds at most
   two people) — and a code key, which never leaves your browser. The room id is
   deliberately derived the expensive way as well, so it can't be used to guess your
   code offline.</p>
 
-  <h2>Forward secrecy: a fresh key for every session</h2>
-  <p>The code key never encrypts your messages directly. When both people are in the
+  <h2 data-i18n="sec.h2b">Forward secrecy: a fresh key for every session</h2>
+  <p data-i18n-html="sec.pb">The code key never encrypts your messages directly. When both people are in the
   room, their browsers exchange ephemeral ECDH public keys — each one encrypted under
   the code key, so only someone holding the code can take part — and independently
   derive the same session key from them. That session key, and only it, encrypts your
@@ -33,8 +34,8 @@
   your code, the recording stays sealed, because the keys that could open it no
   longer exist anywhere.</p>
 
-  <h2>The journey of a message</h2>
-  <p>Messages and images are encrypted in the sender's browser with the session key
+  <h2 data-i18n="sec.h2c">The journey of a message</h2>
+  <p data-i18n="sec.pc">Messages and images are encrypted in the sender's browser with the session key
   and a fresh random IV for every message, relayed by the server in encrypted form
   from memory only, then opened in the recipient's browser. The server has no key, so
   if its traffic were intercepted or the server itself breached, all anyone would get
@@ -43,32 +44,37 @@
   The six characters at the top of the chat screen are your room fingerprint —
   compare them with your friend's to be sure you're both using the same code.</p>
 
-  <h2>What it protects</h2>
-  <p>Your conversation's contents from network snoopers, from the hosting provider, and
+  <h2 data-i18n="sec.h2d">What it protects</h2>
+  <p data-i18n="sec.pd">Your conversation's contents from network snoopers, from the hosting provider, and
   from anyone who doesn't hold the code. There is no history that could be demanded,
   stolen, or leaked from the server, because nothing is ever stored.</p>
 
-  <h2>What it cannot protect</h2>
-  <p>Bisik can't help if your own device is already compromised, if the person you're
+  <h2 data-i18n="sec.h2e">What it cannot protect</h2>
+  <p data-i18n="sec.pe">Bisik can't help if your own device is already compromised, if the person you're
   talking to photographs the screen or forwards the contents, or if your code is weak
   and gets guessed — codes like a birthday or "secret123" can be tried by anyone. Your
   IP address also remains visible to the network and the hosting provider, like any
   website.</p>
-  <p>The code still decides who gets in: anyone who learns it while a session is live
+  <p data-i18n="sec.pf">The code still decides who gets in: anyone who learns it while a session is live
   could try to join (a room holds at most two people, and you'd see them arrive).
   Forward secrecy protects the past, not the present — so still treat the code itself
   as a secret, and use a fresh one for each conversation.</p>
 
-  <h2>Tips for staying safe</h2>
-  <p>Use the built-in random code, or a long custom code with no personal meaning.
+  <h2 data-i18n="sec.h2f">Tips for staying safe</h2>
+  <p data-i18n="sec.pg">Use the built-in random code, or a long custom code with no personal meaning.
   Share the code through a different channel than the conversation itself. Compare
   room fingerprints before discussing anything sensitive. End the session when you're
   done.</p>
 
+  <div class="lang-switch" role="group" aria-label="Language / Bahasa">
+    <button type="button" class="ghost" data-lang-set="en" aria-pressed="true">EN</button>
+    <button type="button" class="ghost" data-lang-set="id" aria-pressed="false">ID</button>
+  </div>
+
   <footer class="links">
-    <a href="/privacy.html">Privacy</a> ·
-    <a href="/terms.html">Terms</a> ·
-    <a href="/security.html">Security</a>
+    <a href="/privacy.html" data-i18n="linkPrivacy">Privacy</a> ·
+    <a href="/terms.html" data-i18n="linkTerms">Terms</a> ·
+    <a href="/security.html" data-i18n="linkSecurity">Security</a>
   </footer>
 </main>
 </body>

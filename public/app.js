@@ -6,6 +6,7 @@
 import { deriveSession, encryptWith, decryptWith, makeKeyPair, exportPub, deriveShared, makeSeenCache } from './crypto.js';
 
 const $ = (s) => document.querySelector(s);
+const t = (k, v) => window.BisikI18n.t(k, v); // UI language: device language by default (see i18n.js)
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
@@ -61,17 +62,17 @@ async function handleKey(envelope) {
 // ack comes back in 6 s the mark stays "unconfirmed" rather than faking success.
 function trackSent(id, el) {
   const tick = document.createElement('div');
-  tick.className = 'meta'; tick.textContent = '✓ sent';
+  tick.className = 'meta'; tick.textContent = t('sent');
   el.append(tick);
-  const timer = setTimeout(() => { pending.delete(id); tick.textContent = '✓ sent — unconfirmed'; }, 6000);
+  const timer = setTimeout(() => { pending.delete(id); tick.textContent = t('sentUnconfirmed'); }, 6000);
   pending.set(id, { el, tick, timer });
 }
 function resolveSent(id, delivered) {
   const p = pending.get(id); if (!p) return;
   pending.delete(id); clearTimeout(p.timer);
-  if (delivered) { p.tick.textContent = '✓✓ delivered'; return; }
+  if (delivered) { p.tick.textContent = t('delivered'); return; }
   p.el.classList.add('failed'); p.tick.classList.add('bad');
-  p.tick.textContent = '✕ not delivered — gone';
+  p.tick.textContent = t('notDelivered');
 }
 
 function systemNote(text) {
@@ -95,10 +96,10 @@ function setStatus(text, online) {
 }
 
 function peerStatus() {
-  if (peerOnline && ownTabPeer) setStatus("That's your own other tab in this room — not a friend yet", true);
-  else if (peerOnline && !sessionKey) setStatus('Friend connected — securing the connection…', true);
-  else setStatus(peerOnline ? 'Friend connected — messages are end-to-end encrypted'
-                            : 'Waiting for your friend to join… anything sent now will be lost', peerOnline);
+  if (peerOnline && ownTabPeer) setStatus(t('statusOwnTab'), true);
+  else if (peerOnline && !sessionKey) setStatus(t('statusSecuring'), true);
+  else setStatus(peerOnline ? t('statusConnected')
+                            : t('statusWaiting'), peerOnline);
 }
 
 // Tabs of the same browser can hear each other over a BroadcastChannel that
@@ -110,7 +111,7 @@ if (bc) bc.onmessage = (ev) => {
   if (m.room !== roomHash || !codeKey || ownTabPeer) return;
   ownTabPeer = true;
   peerStatus();
-  systemNote('The other seat in this room is your own other tab.');
+  systemNote(t('noteOwnTab'));
   clearInterval(flashTimer); document.title = 'Bisik';
   if (!m.reply) bc.postMessage({ room: roomHash, from: seat, reply: true });
 };
@@ -130,6 +131,11 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) { clearInterval(flashTimer); document.title = 'Bisik'; }
 });
 
+// If the visitor flips the language mid-session, refresh the live status
+// line (already-printed notes and receipts keep the language they were
+// written in — same as a person switching mid-conversation).
+window.addEventListener('bisik:lang', () => { if (codeKey) peerStatus(); });
+
 function connect() {
   clearTimeout(reconnectTimer);
   $('#reconnect').hidden = true;
@@ -140,7 +146,7 @@ function connect() {
   clearTimeout(slowTimer);
   slowTimer = setTimeout(() => {
     if (ws.readyState !== 1) {
-      const msg = 'The server is waking up (free hosting naps when idle) — hang on, still trying…';
+      const msg = t('noteWaking');
       if ($('#chat-screen').hidden) $('#join-error').textContent = msg;
       else systemNote(msg);
     }
@@ -153,15 +159,15 @@ function connect() {
 function onClose() {
   if (leaving) return;
   peerOnline = false;
-  setStatus('Disconnected', false);
+  setStatus(t('statusDisconnected'), false);
   $('#reconnect').hidden = false;
   if ($('#auto-reconnect').checked && reconnectAttempts < 10) {
     const delay = Math.min(1000 * 2 ** reconnectAttempts, 15000);
     reconnectAttempts++;
-    systemNote(`Connection lost. Reconnecting automatically in ${Math.round(delay / 1000)} seconds… (or tap "Reconnect")`);
+    systemNote(t('noteReconnecting', { n: Math.round(delay / 1000) }));
     reconnectTimer = setTimeout(connect, delay);
   } else {
-    systemNote('Connection lost. Tap "Reconnect" to rejoin the same room — the history on this screen stays put.');
+    systemNote(t('noteLost'));
   }
 }
 
@@ -178,15 +184,15 @@ async function onMessage(ev) {
       $('#join-screen').hidden = true;
       $('#chat-screen').hidden = false;
       $('#fingerprint').textContent = '#' + roomHash.slice(0, 6);
-      systemNote('Session started. Nothing in this session is stored anywhere.');
+      systemNote(t('noteSessionStarted'));
     } else {
-      systemNote('Reconnected.');
+      systemNote(t('noteReconnected'));
     }
     peerOnline = m.peers > 1; peerStatus();
     if (peerOnline) offerKey();
   } else if (m.type === 'full') {
     leaving = true; // don't reconnect — the server refused us on purpose
-    $('#join-error').textContent = 'That code already has 2 people in its room.';
+    $('#join-error').textContent = t('errFull');
     $('#join-screen').hidden = false;
     $('#chat-screen').hidden = true;
     ws.close();
@@ -195,8 +201,8 @@ async function onMessage(ev) {
     if (!m.online) { ownTabPeer = false; sessionKey = null; myPair = null; } // whoever held the other seat is gone — and so is that session's key
     peerStatus();
     if (m.online) offerKey();
-    systemNote(m.online ? 'Your friend joined.' : 'Your friend left — the next message will be lost.');
-    flashTitle(m.online ? '• Your friend joined — Bisik' : '• Your friend left — Bisik');
+    systemNote(m.online ? t('noteFriendJoined') : t('noteFriendLeft'));
+    flashTitle(m.online ? t('flashJoined') : t('flashLeft'));
   } else if (m.type === 'dropped') {
     // The server discarded a message because the recipient isn't there.
     // Flag exactly that message — never resend (gone means gone).
@@ -213,13 +219,13 @@ async function onMessage(ev) {
       else addBubble(false, (el) => {
         const img = document.createElement('img');
         img.src = URL.createObjectURL(new Blob([m2.data], { type: m2.mime }));
-        img.alt = 'Encrypted image from your friend';
+        img.alt = t('imgAltFriend');
         el.append(img);
       });
       // Shown on screen: acknowledge it so the sender gets their ✓✓.
       if (m2.id && ws.readyState === 1) ws.send(JSON.stringify({ type: 'ack', id: m2.id }));
     } catch {
-      systemNote("A message arrived that can't be opened with your code.");
+      systemNote(t('noteUnopenable'));
     }
   }
 }
@@ -239,13 +245,13 @@ $('#gen').addEventListener('click', () => {
 // limited entropy. For serious use, recommend a long custom code (see README).
 $('#copy').addEventListener('click', async () => {
   const value = $('#code').value.trim();
-  if (!value) { $('#join-error').textContent = 'Enter a code first — or make a random one.'; return; }
+  if (!value) { $('#join-error').textContent = t('errEnterCode'); return; }
   $('#join-error').textContent = '';
   try { await navigator.clipboard.writeText(value); }
   catch { $('#code').select(); document.execCommand('copy'); } // fallback for older browsers
-  const btn = $('#copy'), old = btn.textContent;
-  btn.textContent = 'Copied ✓';
-  setTimeout(() => { btn.textContent = old; }, 1600);
+  const btn = $('#copy');
+  btn.textContent = t('copied');
+  setTimeout(() => { btn.textContent = t('copy'); }, 1600);
 });
 
 // A short custom code is the one weak spot a user can choose for themselves:
@@ -254,15 +260,15 @@ $('#copy').addEventListener('click', async () => {
 $('#code').addEventListener('input', () => {
   const n = $('#code').value.trim().length;
   $('#join-error').textContent =
-    (n >= 8 && n < 12) ? 'That code is short enough to guess — 12+ characters, or the random code, is much safer.' : '';
+    (n >= 8 && n < 12) ? t('warnShortCode') : '';
 });
 
 $('#enter').addEventListener('click', async () => {
   // The code is used exactly as typed (capitals are different characters) —
   // forcing lowercase would silently weaken custom codes.
   const code = $('#code').value.trim();
-  if (code.length < 8) { $('#join-error').textContent = 'The code needs at least 8 characters.'; return; }
-  $('#join-error').textContent = 'Preparing the encryption key…';
+  if (code.length < 8) { $('#join-error').textContent = t('errShortCode'); return; }
+  $('#join-error').textContent = t('notePreparing');
   ({ key: codeKey, room: roomHash } = await deriveSession(code));
   leaving = false;
   connect();
@@ -274,7 +280,7 @@ $('#composer').addEventListener('submit', async (e) => {
   e.preventDefault();
   const text = $('#text').value.trim();
   if (!text || !ws || ws.readyState !== 1) {
-    if (text) systemNote("Not connected — message wasn't sent.");
+    if (text) systemNote(t('noteNotConnectedMsg'));
     return;
   }
   $('#text').value = '';
@@ -308,14 +314,14 @@ $('#file').addEventListener('change', async () => {
   const file = $('#file').files[0];
   $('#file').value = '';
   if (!file) return;
-  if (!ws || ws.readyState !== 1) { systemNote("Not connected — image wasn't sent."); return; }
-  if (file.size > 5 * 1024 * 1024) { systemNote('That image is too big — 5 MB max.'); return; }
+  if (!ws || ws.readyState !== 1) { systemNote(t('noteNotConnectedImg')); return; }
+  if (file.size > 5 * 1024 * 1024) { systemNote(t('noteTooBig')); return; }
   const { buf, mime, blob } = await stripImage(file);
-  if (buf.byteLength > 6_800_000) { systemNote('That image is too big — 5 MB max.'); return; }
+  if (buf.byteLength > 6_800_000) { systemNote(t('noteTooBig')); return; }
   const id = crypto.randomUUID();
   const el = addBubble(true, (b) => {
     const img = document.createElement('img');
-    img.src = URL.createObjectURL(blob); img.alt = 'Image you sent';
+    img.src = URL.createObjectURL(blob); img.alt = t('imgAltMine');
     b.append(img);
   });
   trackSent(id, el);
