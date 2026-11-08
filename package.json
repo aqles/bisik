@@ -1,1 +1,1 @@
-{"dependencies":{"ws":"^8.18.0"},"description":"Chat 1-on-1 terenkripsi ujung-ke-ujung. Tanpa akun, tanpa database, pesan tidak pernah disimpan.","name":"bisik","private":true,"scripts":{"start":"node server.js","test":"node test/e2e.mjs"},"type":"module","version":"0.1.0"}
+{"dependencies":{"ws":"^8.18.0"},"description":"Chat 1-on-1 terenkripsi ujung-ke-ujung. Tanpa akun, tanpa database, pesan tidak pernah disimpan.","name":"bisik","private":true,"scripts":{"start":"node server.js","test":"node test/e2e.mjs"},"type":"module","version":"0.2.0"}
