@@ -109,6 +109,16 @@ wss.on('connection', (ws, req) => {
       return;
     }
 
+    // Session key exchange (v0.5+): one peer's ephemeral public key, itself
+    // encrypted under the code key, relayed to the other peer. The server
+    // can't read it and keeps nothing; if the peer isn't there it's dropped.
+    if (m.type === 'key' && room && typeof m.data === 'string') {
+      const set = rooms.get(room);
+      const peer = set && [...set].find((p) => p !== ws);
+      if (peer) peer.send(JSON.stringify({ type: 'key', data: m.data }));
+      return;
+    }
+
     // Delivery receipt: a bare id echoed by the receiver, relayed to the
     // sender. Carries no content; the sender marks that message delivered.
     if (m.type === 'ack' && room && typeof m.id === 'string') {

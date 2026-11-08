@@ -16,18 +16,31 @@
 
   <h2>From a code to a key</h2>
   <p>When you type a code, your browser derives two things from it. One PBKDF2 process
-  (250,000 iterations) produces both at once: the room id — the only thing ever sent to
+  (600,000 iterations) produces both at once: the room id — the only thing ever sent to
   the server, just to pair up two browsers using the same code (a room holds at most
-  two people) — and the AES-GCM 256-bit encryption key, which never leaves your
-  browser. The room id is deliberately derived the expensive way as well, so it can't
-  be used to guess your code offline.</p>
+  two people) — and a code key, which never leaves your browser. The room id is
+  deliberately derived the expensive way as well, so it can't be used to guess your
+  code offline.</p>
+
+  <h2>Forward secrecy: a fresh key for every session</h2>
+  <p>The code key never encrypts your messages directly. When both people are in the
+  room, their browsers exchange ephemeral ECDH public keys — each one encrypted under
+  the code key, so only someone holding the code can take part — and independently
+  derive the same session key from them. That session key, and only it, encrypts your
+  messages. The ephemeral private keys exist only in the page's memory: end the
+  session (or reconnect) and a completely new pair is negotiated. This is forward
+  secrecy — even if someone recorded your encrypted traffic <i>and</i> later learned
+  your code, the recording stays sealed, because the keys that could open it no
+  longer exist anywhere.</p>
 
   <h2>The journey of a message</h2>
-  <p>Messages and images are encrypted in the sender's browser with a fresh random IV
-  for every message, relayed by the server in encrypted form from memory only, then
-  opened in the recipient's browser. The server has no key, so if its traffic were
-  intercepted or the server itself breached, all anyone would get is random-looking
-  text. The six characters at the top of the chat screen are your room fingerprint —
+  <p>Messages and images are encrypted in the sender's browser with the session key
+  and a fresh random IV for every message, relayed by the server in encrypted form
+  from memory only, then opened in the recipient's browser. The server has no key, so
+  if its traffic were intercepted or the server itself breached, all anyone would get
+  is random-looking text. Images are re-encoded in your browser before sending, which
+  strips the EXIF metadata (GPS location, device details) that camera photos carry.
+  The six characters at the top of the chat screen are your room fingerprint —
   compare them with your friend's to be sure you're both using the same code.</p>
 
   <h2>What it protects</h2>
@@ -41,12 +54,10 @@
   and gets guessed — codes like a birthday or "secret123" can be tried by anyone. Your
   IP address also remains visible to the network and the hosting provider, like any
   website.</p>
-  <p>One more, stated plainly: <b>Bisik does not have forward secrecy yet.</b> The same
-  code always derives the same key, so if someone managed to record your encrypted
-  traffic and later learned your code, that recording could be opened. Nothing is
-  stored by Bisik itself, which limits how such a recording could exist — but the
-  property is missing, and we'd rather say so than let you assume it. Until it lands,
-  use a fresh code for each conversation instead of reusing one.</p>
+  <p>The code still decides who gets in: anyone who learns it while a session is live
+  could try to join (a room holds at most two people, and you'd see them arrive).
+  Forward secrecy protects the past, not the present — so still treat the code itself
+  as a secret, and use a fresh one for each conversation.</p>
 
   <h2>Tips for staying safe</h2>
   <p>Use the built-in random code, or a long custom code with no personal meaning.

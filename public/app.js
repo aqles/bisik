@@ -3,7 +3,7 @@
 // The server only receives the room id (to pair two people up) and relays
 // ciphertext. Chat history lives only in this page's variables:
 // refresh / close the tab = gone. No localStorage/sessionStorage anywhere.
-import { deriveSession, encryptWith, decryptWith } from './crypto.js';
+import { deriveSession, encryptWith, decryptWith, makeKeyPair, exportPub, deriveShared, makeSeenCache } from './crypto.js';
 
 const $ = (s) => document.querySelector(s);
 const enc = new TextEncoder();
@@ -15,7 +15,12 @@ const WORDS = ['amber','anchor','apple','arrow','atlas','autumn','bamboo','banan
   'ember','falcon','fern','fjord','flint','forest','garnet','glacier','harbor','hazel',
   'heron','ivory','jasmine','juniper','lagoon','lantern','laurel','linden','meadow','mercury'];
 
-let ws, key, roomHash, peerOnline = false;
+let ws, codeKey, roomHash, peerOnline = false;
+// Forward secrecy: messages are encrypted with an ephemeral session key,
+// re-negotiated on every connection (see offerKey/handleKey below). The code
+// key only authenticates that exchange. No session key = nothing can be sent.
+let sessionKey = null, myPair = null;
+const seen = makeSeenCache(); // ids of messages already shown (anti-replay)
 // A random seat id for this page load, kept only in memory and sent with
 // every join: when this tab reconnects, the server replaces our lingering
 // old socket instead of counting it as a second person.
@@ -25,8 +30,30 @@ let leaving = false;          // true when the user ends the session themselves
 let reconnectTimer = null, reconnectAttempts = 0, slowTimer = null;
 const pending = new Map(); // message id -> { el, tick, timer } while awaiting its receipt
 
-const encrypt = (kind, data, mime, id) => encryptWith(key, kind, data, mime, id);
-const decrypt = (envelope) => decryptWith(key, envelope);
+const encrypt = (kind, data, mime, id) => encryptWith(sessionKey, kind, data, mime, id);
+const decrypt = (envelope) => decryptWith(sessionKey, envelope);
+
+// Offer our ephemeral public key to the peer, encrypted under the code key:
+// only a code-holder can take part in the exchange. A fresh pair is made for
+// every (re)connection, so every session gets its own key.
+async function offerKey() {
+  if (!ws || ws.readyState !== 1 || !codeKey) return;
+  myPair = await makeKeyPair();
+  const pub = await exportPub(myPair);
+  if (ws.readyState === 1) {
+    ws.send(JSON.stringify({ type: 'key', data: await encryptWith(codeKey, 'key', pub) }));
+  }
+}
+async function handleKey(envelope) {
+  try {
+    const d = await decryptWith(codeKey, envelope);
+    if (!myPair) await offerKey();
+    if (myPair) {
+      sessionKey = await deriveShared(myPair, new Uint8Array(d.data), roomHash);
+      peerStatus();
+    }
+  } catch { /* a key offer we can't open isn't from a code-holder — ignore */ }
+}
 
 // Delivery receipts for our own messages, WhatsApp-style but honest:
 // ✓ sent → ✓✓ delivered (your friend's app showed it and acked) or
@@ -69,6 +96,7 @@ function setStatus(text, online) {
 
 function peerStatus() {
   if (peerOnline && ownTabPeer) setStatus("That's your own other tab in this room — not a friend yet", true);
+  else if (peerOnline && !sessionKey) setStatus('Friend connected — securing the connection…', true);
   else setStatus(peerOnline ? 'Friend connected — messages are end-to-end encrypted'
                             : 'Waiting for your friend to join… anything sent now will be lost', peerOnline);
 }
@@ -79,7 +107,7 @@ function peerStatus() {
 const bc = ('BroadcastChannel' in window) ? new BroadcastChannel('bisik-tabs') : null;
 if (bc) bc.onmessage = (ev) => {
   const m = ev.data || {};
-  if (m.room !== roomHash || !key || ownTabPeer) return;
+  if (m.room !== roomHash || !codeKey || ownTabPeer) return;
   ownTabPeer = true;
   peerStatus();
   systemNote('The other seat in this room is your own other tab.');
@@ -139,8 +167,11 @@ function onClose() {
 
 async function onMessage(ev) {
   const m = JSON.parse(ev.data);
-  if (m.type === 'joined') {
+  if (m.type === 'key') {
+    await handleKey(m.data);
+  } else if (m.type === 'joined') {
     reconnectAttempts = 0;
+    sessionKey = null; myPair = null; // every connection negotiates fresh keys
     $('#reconnect').hidden = true;
     if (bc) bc.postMessage({ room: roomHash, from: seat }); // ask: is the other seat my own tab?
     if ($('#chat-screen').hidden) {
@@ -152,6 +183,7 @@ async function onMessage(ev) {
       systemNote('Reconnected.');
     }
     peerOnline = m.peers > 1; peerStatus();
+    if (peerOnline) offerKey();
   } else if (m.type === 'full') {
     leaving = true; // don't reconnect — the server refused us on purpose
     $('#join-error').textContent = 'That code already has 2 people in its room.';
@@ -160,8 +192,9 @@ async function onMessage(ev) {
     ws.close();
   } else if (m.type === 'peer') {
     peerOnline = m.online;
-    if (!m.online) ownTabPeer = false; // whoever held the other seat is gone
+    if (!m.online) { ownTabPeer = false; sessionKey = null; myPair = null; } // whoever held the other seat is gone — and so is that session's key
     peerStatus();
+    if (m.online) offerKey();
     systemNote(m.online ? 'Your friend joined.' : 'Your friend left — the next message will be lost.');
     flashTitle(m.online ? '• Your friend joined — Bisik' : '• Your friend left — Bisik');
   } else if (m.type === 'dropped') {
@@ -172,8 +205,10 @@ async function onMessage(ev) {
   } else if (m.type === 'ack') {
     resolveSent(m.id, true); // your friend's app showed the message
   } else if (m.type === 'msg') {
+    if (!sessionKey) return; // arrived before the key exchange finished — can't be opened anyway
     try {
       const m2 = await decrypt(m.data);
+      if (m2.id && !seen.add(m2.id)) return; // replay of a message already shown — drop it
       if (m2.kind === 'text') addBubble(false, (el) => { el.textContent = dec.decode(m2.data); });
       else addBubble(false, (el) => {
         const img = document.createElement('img');
@@ -213,13 +248,22 @@ $('#copy').addEventListener('click', async () => {
   setTimeout(() => { btn.textContent = old; }, 1600);
 });
 
+// A short custom code is the one weak spot a user can choose for themselves:
+// warn while they type (never block — a generated code is 30+ characters and
+// never triggers this).
+$('#code').addEventListener('input', () => {
+  const n = $('#code').value.trim().length;
+  $('#join-error').textContent =
+    (n >= 8 && n < 12) ? 'That code is short enough to guess — 12+ characters, or the random code, is much safer.' : '';
+});
+
 $('#enter').addEventListener('click', async () => {
   // The code is used exactly as typed (capitals are different characters) —
   // forcing lowercase would silently weaken custom codes.
   const code = $('#code').value.trim();
   if (code.length < 8) { $('#join-error').textContent = 'The code needs at least 8 characters.'; return; }
   $('#join-error').textContent = 'Preparing the encryption key…';
-  ({ key, room: roomHash } = await deriveSession(code));
+  ({ key: codeKey, room: roomHash } = await deriveSession(code));
   leaving = false;
   connect();
 });
@@ -237,8 +281,27 @@ $('#composer').addEventListener('submit', async (e) => {
   const id = crypto.randomUUID();
   const el = addBubble(true, (b) => { b.textContent = text; });
   trackSent(id, el);
+  // No session key = no peer secured yet: the message has nowhere safe to
+  // go, so it dies right here — the same honest ✕, just without the server.
+  if (!sessionKey) { resolveSent(id, false); return; }
   sendPayload(await encrypt('text', enc.encode(text), undefined, id), id);
 });
+
+// Re-encode an image through a canvas before sending: camera photos carry
+// EXIF metadata (GPS location, device info) and your friend doesn't need it.
+// Drawing the pixels into a fresh canvas leaves all of that behind. Falls
+// back to the original bytes for formats the browser can't decode (rare).
+async function stripImage(file) {
+  try {
+    const bmp = await createImageBitmap(file);
+    const c = document.createElement('canvas');
+    c.width = bmp.width; c.height = bmp.height;
+    c.getContext('2d').drawImage(bmp, 0, 0);
+    const blob = await new Promise((r) => c.toBlob(r, file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.92));
+    if (blob) return { buf: await blob.arrayBuffer(), mime: blob.type, blob };
+  } catch { /* undecodable format — fall through to the raw file */ }
+  return { buf: await file.arrayBuffer(), mime: file.type, blob: file };
+}
 
 $('#attach').addEventListener('click', () => $('#file').click());
 $('#file').addEventListener('change', async () => {
@@ -247,15 +310,17 @@ $('#file').addEventListener('change', async () => {
   if (!file) return;
   if (!ws || ws.readyState !== 1) { systemNote("Not connected — image wasn't sent."); return; }
   if (file.size > 5 * 1024 * 1024) { systemNote('That image is too big — 5 MB max.'); return; }
-  const buf = await file.arrayBuffer();
+  const { buf, mime, blob } = await stripImage(file);
+  if (buf.byteLength > 6_800_000) { systemNote('That image is too big — 5 MB max.'); return; }
   const id = crypto.randomUUID();
   const el = addBubble(true, (b) => {
     const img = document.createElement('img');
-    img.src = URL.createObjectURL(file); img.alt = 'Image you sent';
+    img.src = URL.createObjectURL(blob); img.alt = 'Image you sent';
     b.append(img);
   });
   trackSent(id, el);
-  sendPayload(await encrypt('image', buf, file.type, id), id);
+  if (!sessionKey) { resolveSent(id, false); return; }
+  sendPayload(await encrypt('image', buf, mime, id), id);
 });
 
 $('#leave').addEventListener('click', () => { leaving = true; location.reload(); }); // reload = everything gone
@@ -263,7 +328,7 @@ $('#leave').addEventListener('click', () => { leaving = true; location.reload();
 // Warn before an accidental refresh/close throws the session away — but never
 // when the user ends the session on purpose (that's the reload above).
 window.addEventListener('beforeunload', (e) => {
-  if (key && !leaving) e.preventDefault();
+  if (codeKey && !leaving) e.preventDefault();
 });
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
