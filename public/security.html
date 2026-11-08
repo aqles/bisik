@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keamanan — Bisik</title>
+<meta name="theme-color" content="#f59e0b">
+<link rel="icon" href="/icon-192.png">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main class="doc">
+  <a class="back" href="/">← Kembali ke Bisik</a>
+  <h1>Cara Kerja Keamanan Bisik</h1>
+  <p class="updated">Terakhir diperbarui: 8 November 2026</p>
+
+  <h2>Dari kode menjadi kunci</h2>
+  <p>Saat kamu memasukkan kode, browsermu menurunkan dua hal dari kode itu.
+  Pertama, hash SHA-256 sebagai penanda ruangan — inilah satu-satunya yang dikirim
+  ke server, sekadar untuk mempertemukan dua browser berkode sama (satu ruangan
+  maksimal berisi dua orang). Kedua, kunci enkripsi AES-GCM 256-bit yang diturunkan
+  dengan PBKDF2 (250.000 putaran) — kunci ini tidak pernah meninggalkan browsermu.</p>
+
+  <h2>Perjalanan sebuah pesan</h2>
+  <p>Pesan dan gambar dienkripsi di browser pengirim dengan IV acak yang berbeda
+  untuk setiap pesan, diteruskan server relay dalam keadaan terenkripsi lewat
+  memori saja, lalu dibuka di browser penerima. Server tidak punya kunci, jadi
+  andaikan lalu lintasnya disadap atau servernya dibobol, yang didapat hanya teks
+  acak. Enam karakter di bagian atas layar chat adalah sidik jari ruanganmu —
+  samakan dengan milik temanmu untuk memastikan kalian memakai kode yang sama.</p>
+
+  <h2>Yang dilindungi</h2>
+  <p>Isi obrolanmu dari pengintip di jaringan, dari penyedia hosting, dan dari
+  siapa pun yang tidak memegang kodenya. Tidak ada riwayat yang bisa diminta,
+  dicuri, atau bocor dari server, karena memang tidak ada yang disimpan.</p>
+
+  <h2>Yang tidak bisa dilindungi</h2>
+  <p>Bisik tidak bisa melindungi kalau perangkatmu sendiri sudah disusupi, kalau
+  lawan bicaramu memotret layar atau meneruskan isi obrolan, atau kalau kodemu
+  lemah dan berhasil ditebak — kode seperti tanggal lahir atau "rahasia123" bisa
+  dicoba-coba orang. Alamat IP-mu juga tetap terlihat oleh jaringan dan penyedia
+  hosting, seperti situs web mana pun.</p>
+
+  <h2>Tips pakai yang aman</h2>
+  <p>Pakai kode acak bawaan atau kode custom yang panjang dan tidak bermakna pribadi.
+  Bagikan kode lewat jalur yang berbeda dari jalur obrolannya. Cocokkan sidik jari
+  ruangan sebelum membahas hal sensitif. Akhiri sesi setelah selesai.</p>
+
+  <footer class="links">
+    <a href="/privacy.html">Privasi</a> ·
+    <a href="/terms.html">Ketentuan</a> ·
+    <a href="/security.html">Keamanan</a>
+  </footer>
+</main>
+</body>
+</html>

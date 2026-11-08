@@ -75,6 +75,23 @@ try {
     gotB && (await decryptText(keyA, gotB.data)) === secret);
   check('kode beda: C tidak menerima apa-apa', !c.inbox.some((m) => m.type === 'msg'));
 
+  // (4) reconnect: koneksi putus kasar, klien baru berkode sama harus bisa
+  // masuk lagi ke ruangan yang sama dan lanjut mengobrol.
+  const CODE2 = 'ruang-reconnect-77';
+  const key2 = await keyOf(CODE2);
+  const d = await client(), e = await client();
+  await join(d, CODE2); await join(e, CODE2);
+  d.terminate(); // putus tanpa pamit, seperti jaringan drop
+  await wait(300);
+  const d2 = await client(); await join(d2, CODE2);
+  check('reconnect: bisa masuk lagi setelah putus kasar', d2.inbox.some((m) => m.type === 'joined'));
+  e.send(JSON.stringify({ type: 'msg', data: await encryptText(key2, 'nyambung lagi') }));
+  await wait(300);
+  const gotD2 = d2.inbox.find((m) => m.type === 'msg');
+  check('reconnect: pesan tetap mengalir setelah nyambung lagi',
+    !!gotD2 && (await decryptText(key2, gotD2.data)) === 'nyambung lagi');
+  d2.close(); e.close();
+
   a.close(); b.close(); c.close();
 } finally {
   server.kill();

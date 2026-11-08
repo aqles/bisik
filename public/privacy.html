@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privasi — Bisik</title>
+<meta name="theme-color" content="#f59e0b">
+<link rel="icon" href="/icon-192.png">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main class="doc">
+  <a class="back" href="/">← Kembali ke Bisik</a>
+  <h1>Kebijakan Privasi</h1>
+  <p class="updated">Terakhir diperbarui: 8 November 2026</p>
+
+  <p>Bisik dibuat dengan satu prinsip: kami tidak bisa menyerahkan, menjual,
+  atau membocorkan isi obrolanmu karena <b>kami memang tidak pernah memilikinya</b>.</p>
+
+  <h2>Yang tidak kami kumpulkan</h2>
+  <p>Tidak ada akun dan tidak ada pendaftaran, jadi tidak ada nama, email, nomor
+  telepon, atau kata sandi yang disimpan. Tidak ada database. Tidak ada analitik,
+  tidak ada iklan, tidak ada pelacak pihak ketiga.</p>
+
+  <h2>Isi pesan dan gambar</h2>
+  <p>Pesan dan gambar dienkripsi di browsermu sebelum dikirim. Server relay hanya
+  meneruskan hasil enkripsi itu dari memori (RAM) ke lawan bicaramu — tidak menulisnya
+  ke disk, tidak mencatatnya, dan tidak mengantrekannya. Kalau lawan bicaramu sedang
+  offline, pesanmu langsung dibuang. Riwayat obrolan hanya ada di tab yang sedang
+  terbuka; menutup atau me-refresh halaman akan menghapusnya.</p>
+
+  <h2>Kodemu</h2>
+  <p>Kode bersama tidak pernah dikirim ke server. Yang dikirim hanya hash SHA-256
+  dari kode itu, supaya server bisa mempertemukan dua orang yang memakai kode yang
+  sama. Kunci enkripsinya sendiri diturunkan dan dipakai hanya di browser kalian.</p>
+
+  <h2>Yang tersimpan di perangkatmu</h2>
+  <p>Kalau kamu menginstal Bisik sebagai PWA, browser menyimpan file aplikasinya
+  (halaman, gaya, ikon) supaya bisa dibuka dengan cepat. Isi obrolan tidak pernah
+  termasuk yang disimpan. Bisik tidak memakai localStorage, sessionStorage,
+  IndexedDB, atau cookie untuk menyimpan data obrolan.</p>
+
+  <h2>Batas kejujuran kami</h2>
+  <p>Agar sebuah koneksi bisa terjadi, alamat IP-mu tentu terlihat oleh jaringan dan
+  penyedia hosting tempat relay berjalan (saat ini Render), sama seperti situs web
+  mana pun. Penyedia hosting dapat memiliki catatan jaringan standar di sisi mereka
+  yang berada di luar kendali aplikasi ini. Yang bisa kami jamin dari sisi aplikasi:
+  isi pesan tidak pernah dicatat atau disimpan di mana pun.</p>
+
+  <h2>Kontak</h2>
+  <p>Pertanyaan soal privasi bisa disampaikan lewat halaman kontak di
+  <a href="https://www.ednasalam.com">ednasalam.com</a>.</p>
+
+  <footer class="links">
+    <a href="/privacy.html">Privasi</a> ·
+    <a href="/terms.html">Ketentuan</a> ·
+    <a href="/security.html">Keamanan</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -26,11 +26,21 @@
     <button id="gen" type="button" class="ghost">Buat kode acak</button>
     <button id="enter" type="button" class="primary">Masuk</button>
   </div>
+  <label class="check">
+    <input id="auto-reconnect" type="checkbox" checked>
+    Sambungkan ulang otomatis kalau koneksi putus
+  </label>
   <p id="join-error" class="error" role="alert"></p>
   <p class="note">Bagikan kode yang <b>sama persis</b> ke temanmu lewat jalur lain
   (tatap muka / telepon). Kode = kunci enkripsi: yang tidak punya kode tidak bisa
   membaca, dan kode yang beda artinya ruangan yang beda.
   Kode pendek gampang ditebak — pakai kode acak atau kode custom yang panjang.</p>
+
+  <footer class="links">
+    <a href="/privacy.html">Privasi</a> ·
+    <a href="/terms.html">Ketentuan</a> ·
+    <a href="/security.html">Keamanan</a>
+  </footer>
 </main>
 
 <main id="chat-screen" hidden>
@@ -40,6 +50,7 @@
       <div id="status" class="status">Menunggu teman masuk…</div>
     </div>
     <div id="fingerprint" title="Samakan kode ini dengan temanmu — kalau sama, kalian memakai kode yang sama"></div>
+    <button id="reconnect" type="button" class="ghost" hidden>Sambungkan lagi</button>
     <button id="leave" type="button" class="ghost">Akhiri</button>
   </header>
 

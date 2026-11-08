@@ -55,3 +55,16 @@ button.ghost { background: #fff; border-color: #cbd5e1; color: #0f172a; }
   display: flex; gap: 8px; padding: 12px; background: #fff; border-top: 2px solid #e2e8f0;
 }
 #composer #text { flex: 1; font-size: 16px; padding: 12px; border: 2px solid #cbd5e1; border-radius: 12px; }
+
+.check { display: flex; gap: 8px; align-items: center; font-size: 15px; margin-top: 14px; cursor: pointer; }
+.check input { width: 20px; height: 20px; accent-color: #f59e0b; }
+.links { margin-top: 34px; font-size: 14px; color: #64748b; }
+.links a { color: #64748b; }
+
+/* Halaman dokumen (Privasi / Ketentuan / Keamanan) */
+.doc { max-width: 640px; line-height: 1.65; }
+.doc h1 { font-size: 30px; }
+.doc h2 { font-size: 19px; margin-top: 28px; }
+.doc a.back { color: #b45309; text-decoration: none; font-weight: 600; }
+.doc .updated { color: #64748b; font-size: 14px; }
+.doc footer { margin-top: 40px; }

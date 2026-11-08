@@ -13,7 +13,9 @@ const WORDS = ['senja','kopi','bulan','hujan','angin','laut','buku','kunci','mej
   'kucing','burung','ikan','kuda','pohon','daun','bunga','tanah','api','air',
   'jalan','kota','desa','pasar','kereta','perahu','layang','cermin','jam','peta'];
 
-let ws, key, peerOnline = false;
+let ws, key, roomHash, peerOnline = false;
+let leaving = false;          // true kalau user sendiri yang mengakhiri sesi
+let reconnectTimer = null, reconnectAttempts = 0;
 const pending = new Map(); // id -> elemen bubble (buat tanda gagal kalau penerima offline)
 
 const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -58,11 +60,89 @@ function addBubble(mine, build) {
   return el;
 }
 
-function setStatus() {
+function setStatus(text, online) {
   const s = $('#status');
-  s.textContent = peerOnline ? 'Teman terhubung — pesan terenkripsi ujung-ke-ujung'
-                             : 'Menunggu teman masuk… pesan yang dikirim sekarang akan hilang';
-  s.classList.toggle('online', peerOnline);
+  s.textContent = text;
+  s.classList.toggle('online', !!online);
+}
+
+function peerStatus() {
+  setStatus(peerOnline ? 'Teman terhubung — pesan terenkripsi ujung-ke-ujung'
+                       : 'Menunggu teman masuk… pesan yang dikirim sekarang akan hilang', peerOnline);
+}
+
+function connect() {
+  clearTimeout(reconnectTimer);
+  $('#reconnect').hidden = true;
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}`);
+  ws.onopen = () => ws.send(JSON.stringify({ type: 'join', room: roomHash }));
+  ws.onmessage = onMessage;
+  ws.onclose = onClose;
+}
+
+function onClose() {
+  if (leaving) return;
+  peerOnline = false;
+  setStatus('Koneksi putus', false);
+  $('#reconnect').hidden = false;
+  if ($('#auto-reconnect').checked && reconnectAttempts < 10) {
+    const delay = Math.min(1000 * 2 ** reconnectAttempts, 15000);
+    reconnectAttempts++;
+    systemNote(`Koneksi putus. Menyambung ulang otomatis dalam ${Math.round(delay / 1000)} detik… (atau klik "Sambungkan lagi")`);
+    reconnectTimer = setTimeout(connect, delay);
+  } else {
+    systemNote('Koneksi putus. Klik "Sambungkan lagi" untuk masuk ke ruangan yang sama — riwayat di layar ini tidak hilang.');
+  }
+}
+
+async function onMessage(ev) {
+  const m = JSON.parse(ev.data);
+  if (m.type === 'joined') {
+    reconnectAttempts = 0;
+    $('#reconnect').hidden = true;
+    if ($('#chat-screen').hidden) {
+      $('#join-screen').hidden = true;
+      $('#chat-screen').hidden = false;
+      $('#fingerprint').textContent = '#' + roomHash.slice(0, 6);
+      systemNote('Sesi mulai. Pesan di sesi ini tidak disimpan di mana pun.');
+    } else {
+      systemNote('Berhasil menyambung ulang.');
+    }
+    peerOnline = m.peers > 1; peerStatus();
+  } else if (m.type === 'full') {
+    leaving = true; // jangan reconnect — memang ditolak server
+    $('#join-error').textContent = 'Ruangan kode ini sudah berisi 2 orang.';
+    $('#join-screen').hidden = false;
+    $('#chat-screen').hidden = true;
+    ws.close();
+  } else if (m.type === 'peer') {
+    peerOnline = m.online; peerStatus();
+    systemNote(m.online ? 'Temanmu masuk.' : 'Temanmu keluar — pesan berikutnya akan hilang.');
+  } else if (m.type === 'dropped') {
+    // Server membuang pesan karena penerima tidak ada. Tandai, jangan kirim ulang.
+    systemNote('Satu pesan tidak terkirim karena teman offline — pesan itu dihapus.');
+    for (const el of pending.values()) {
+      el.classList.add('failed');
+      const meta = document.createElement('div');
+      meta.className = 'meta'; meta.textContent = 'tidak terkirim — hilang';
+      el.append(meta);
+    }
+    pending.clear();
+  } else if (m.type === 'msg') {
+    try {
+      const m2 = await decrypt(m.data);
+      if (m2.kind === 'text') addBubble(false, (el) => { el.textContent = dec.decode(m2.data); });
+      else addBubble(false, (el) => {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(new Blob([m2.data], { type: m2.mime }));
+        img.alt = 'Gambar terenkripsi dari teman';
+        el.append(img);
+      });
+    } catch {
+      systemNote('Ada pesan masuk yang tidak bisa dibuka dengan kodemu.');
+    }
+  }
 }
 
 async function sendPayload(envelope) {
@@ -84,59 +164,21 @@ $('#enter').addEventListener('click', async () => {
   const code = $('#code').value.trim().toLowerCase();
   if (code.length < 8) { $('#join-error').textContent = 'Kode minimal 8 karakter.'; return; }
   $('#join-error').textContent = 'Menyiapkan kunci enkripsi…';
-
-  const room = await sha256Hex('bisik-room-v1:' + code);
+  roomHash = await sha256Hex('bisik-room-v1:' + code);
   key = await deriveKey(code);
-
-  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  ws = new WebSocket(`${proto}//${location.host}`);
-  ws.onopen = () => ws.send(JSON.stringify({ type: 'join', room }));
-  ws.onmessage = async (ev) => {
-    const m = JSON.parse(ev.data);
-    if (m.type === 'joined') {
-      $('#join-screen').hidden = true;
-      $('#chat-screen').hidden = false;
-      $('#fingerprint').textContent = '#' + room.slice(0, 6);
-      peerOnline = m.peers > 1; setStatus();
-      systemNote('Sesi mulai. Pesan di sesi ini tidak disimpan di mana pun.');
-    } else if (m.type === 'full') {
-      $('#join-error').textContent = 'Ruangan kode ini sudah berisi 2 orang.';
-      ws.close();
-    } else if (m.type === 'peer') {
-      peerOnline = m.online; setStatus();
-      systemNote(m.online ? 'Temanmu masuk.' : 'Temanmu keluar — pesan berikutnya akan hilang.');
-    } else if (m.type === 'dropped') {
-      // Server membuang pesan karena penerima tidak ada. Tandai, jangan kirim ulang.
-      systemNote('Satu pesan tidak terkirim karena teman offline — pesan itu dihapus.');
-      for (const el of pending.values()) {
-        el.classList.add('failed');
-        const meta = document.createElement('div');
-        meta.className = 'meta'; meta.textContent = 'tidak terkirim — hilang';
-        el.append(meta);
-      }
-      pending.clear();
-    } else if (m.type === 'msg') {
-      try {
-        const m2 = await decrypt(m.data);
-        if (m2.kind === 'text') addBubble(false, (el) => { el.textContent = dec.decode(m2.data); });
-        else addBubble(false, (el) => {
-          const img = document.createElement('img');
-          img.src = URL.createObjectURL(new Blob([m2.data], { type: m2.mime }));
-          img.alt = 'Gambar terenkripsi dari teman';
-          el.append(img);
-        });
-      } catch {
-        systemNote('Ada pesan masuk yang tidak bisa dibuka dengan kodemu.');
-      }
-    }
-  };
-  ws.onclose = () => { if (!$('#chat-screen').hidden) systemNote('Koneksi putus. Sesi selesai.'); };
+  leaving = false;
+  connect();
 });
+
+$('#reconnect').addEventListener('click', () => { reconnectAttempts = 0; connect(); });
 
 $('#composer').addEventListener('submit', async (e) => {
   e.preventDefault();
   const text = $('#text').value.trim();
-  if (!text || !ws) return;
+  if (!text || !ws || ws.readyState !== 1) {
+    if (text) systemNote('Belum tersambung — pesan tidak dikirim.');
+    return;
+  }
   $('#text').value = '';
   const el = addBubble(true, (b) => { b.textContent = text; });
   const id = await sendPayload(await encrypt('text', enc.encode(text)));
@@ -149,6 +191,7 @@ $('#file').addEventListener('change', async () => {
   const file = $('#file').files[0];
   $('#file').value = '';
   if (!file) return;
+  if (!ws || ws.readyState !== 1) { systemNote('Belum tersambung — gambar tidak dikirim.'); return; }
   if (file.size > 5 * 1024 * 1024) { systemNote('Gambar kegedean — maksimal 5 MB.'); return; }
   const buf = await file.arrayBuffer();
   const el = addBubble(true, (b) => {
@@ -161,6 +204,6 @@ $('#file').addEventListener('change', async () => {
   setTimeout(() => pending.delete(id), 1500);
 });
 
-$('#leave').addEventListener('click', () => location.reload()); // reload = semua hilang
+$('#leave').addEventListener('click', () => { leaving = true; location.reload(); }); // reload = semua hilang
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');

@@ -40,8 +40,21 @@ const rooms = new Map();
 
 const wss = new WebSocketServer({ server: httpServer, maxPayload: 10 * 1024 * 1024 });
 
+// Heartbeat: koneksi yang diam terlalu lama (atau mati diam-diam) diputus
+// supaya ruangan tidak penuh oleh hantu dan relay tidak digantung proxy.
+const heartbeat = setInterval(() => {
+  for (const ws of wss.clients) {
+    if (ws.isAlive === false) { ws.terminate(); continue; }
+    ws.isAlive = false;
+    ws.ping();
+  }
+}, 25000);
+wss.on('close', () => clearInterval(heartbeat));
+
 wss.on('connection', (ws) => {
   let room = null;
+  ws.isAlive = true;
+  ws.on('pong', () => { ws.isAlive = true; });
 
   ws.on('message', (raw) => {
     let m;
@@ -50,6 +63,7 @@ wss.on('connection', (ws) => {
     if (m.type === 'join' && typeof m.room === 'string' && /^[a-f0-9]{64}$/.test(m.room)) {
       let set = rooms.get(m.room);
       if (!set) rooms.set(m.room, (set = new Set()));
+      for (const p of set) if (p.readyState !== 1) set.delete(p); // bersihkan sisa koneksi mati
       if (set.size >= 2) { ws.send(JSON.stringify({ type: 'full' })); ws.close(); return; }
       room = m.room;
       set.add(ws);
