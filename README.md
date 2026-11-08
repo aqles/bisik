@@ -1,10 +1,14 @@
 # Bisik
 
+[![Test](https://github.com/aqles/bisik/actions/workflows/test.yml/badge.svg)](https://github.com/aqles/bisik/actions/workflows/test.yml)
+
 A two-person chat that deliberately keeps nothing.
 
 Bisik is a web app (installable as a PWA) for talking 1-on-1 under encryption. No accounts, no contact lists, no database. Two people enter the same code and talk. End the session and the messages end with it — no history left anywhere.
 
 **Try it live: https://bisik.ednasalam.com** (version 0.4.1)
+
+![The Bisik join screen — one code field, one button, nothing else](docs/screenshot.png)
 
 ## How to use it
 
