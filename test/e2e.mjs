@@ -25,9 +25,9 @@ function client(options) {
   ws.on('message', (d) => ws.inbox.push(JSON.parse(d.toString())));
   return new Promise((res) => ws.on('open', () => res(ws)));
 }
-async function join(ws, code) {
+async function join(ws, code, seat) {
   const { room } = await deriveSession(code);
-  ws.send(JSON.stringify({ type: 'join', room }));
+  ws.send(JSON.stringify({ type: 'join', room, seat }));
   await wait(150);
 }
 
@@ -107,6 +107,19 @@ try {
   await wait(300);
   check('foreign origin: rejected (cannot join)', !evilJoined && evilClosed);
   try { evil.close(); } catch { /* ignore */ }
+
+  // (8) seat replacement: the same tab reconnecting while its old socket still
+  // lingers must REPLACE itself — not count as a second person ("friend").
+  const SEAT_CODE = 'seat-reconnect-room';
+  const s1 = await client(); await join(s1, SEAT_CODE, 'seat-xyz');
+  let s1Closed = false; s1.on('close', () => { s1Closed = true; });
+  const s2 = await client(); await join(s2, SEAT_CODE, 'seat-xyz');
+  await wait(250);
+  const s2Joined = s2.inbox.find((m) => m.type === 'joined');
+  check('seat reconnect: rejoins as itself, not as a friend (peers=1)',
+    !!s2Joined && s2Joined.peers === 1 && !s2.inbox.some((m) => m.type === 'full'));
+  check('seat reconnect: the lingering old socket is closed by the server', s1Closed);
+  s2.close();
 
   a.close(); b.close(); c.close();
 } finally {

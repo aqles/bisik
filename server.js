@@ -93,6 +93,14 @@ wss.on('connection', (ws, req) => {
       let set = rooms.get(m.room);
       if (!set) rooms.set(m.room, (set = new Set()));
       for (const p of set) if (p.readyState !== 1) set.delete(p); // prune dead connections
+      // Seat replacement: a reconnecting client sends the same random seat id
+      // it always sends (kept only in page memory). Its lingering old socket
+      // is itself, not a second person — close it before counting heads, so
+      // a reconnect never reads as "your friend joined".
+      if (typeof m.seat === 'string' && m.seat) {
+        for (const p of [...set]) if (p.seat === m.seat) { p.replaced = true; set.delete(p); p.close(); }
+        ws.seat = m.seat;
+      }
       if (set.size >= 2) { ws.send(JSON.stringify({ type: 'full' })); ws.close(); return; }
       room = m.room;
       set.add(ws);
@@ -121,6 +129,7 @@ wss.on('connection', (ws, req) => {
     const set = rooms.get(room);
     if (!set) return;
     set.delete(ws);
+    if (ws.replaced) return; // its replacement is already seated; nobody "left"
     for (const peer of set) peer.send(JSON.stringify({ type: 'peer', online: false }));
     if (set.size === 0) rooms.delete(room);
   });

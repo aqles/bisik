@@ -16,6 +16,11 @@ const WORDS = ['amber','anchor','apple','arrow','atlas','autumn','bamboo','banan
   'heron','ivory','jasmine','juniper','lagoon','lantern','laurel','linden','meadow','mercury'];
 
 let ws, key, roomHash, peerOnline = false;
+// A random seat id for this page load, kept only in memory and sent with
+// every join: when this tab reconnects, the server replaces our lingering
+// old socket instead of counting it as a second person.
+const seat = crypto.randomUUID();
+let ownTabPeer = false;       // the other seat is this browser's own other tab
 let leaving = false;          // true when the user ends the session themselves
 let reconnectTimer = null, reconnectAttempts = 0, slowTimer = null;
 const pending = new Map(); // id -> bubble element (to flag failures when the peer is offline)
@@ -44,9 +49,24 @@ function setStatus(text, online) {
 }
 
 function peerStatus() {
-  setStatus(peerOnline ? 'Friend connected — messages are end-to-end encrypted'
-                       : 'Waiting for your friend to join… anything sent now will be lost', peerOnline);
+  if (peerOnline && ownTabPeer) setStatus("That's your own other tab in this room — not a friend yet", true);
+  else setStatus(peerOnline ? 'Friend connected — messages are end-to-end encrypted'
+                            : 'Waiting for your friend to join… anything sent now will be lost', peerOnline);
 }
+
+// Tabs of the same browser can hear each other over a BroadcastChannel that
+// never leaves this device. When the "other person" in the room turns out
+// to be your own other tab, say so — and undo any friend-joined title flash.
+const bc = ('BroadcastChannel' in window) ? new BroadcastChannel('bisik-tabs') : null;
+if (bc) bc.onmessage = (ev) => {
+  const m = ev.data || {};
+  if (m.room !== roomHash || !key || ownTabPeer) return;
+  ownTabPeer = true;
+  peerStatus();
+  systemNote('The other seat in this room is your own other tab.');
+  clearInterval(flashTimer); document.title = 'Bisik';
+  if (!m.reply) bc.postMessage({ room: roomHash, from: seat, reply: true });
+};
 
 // Title flash: if the tab is in the background when your friend arrives or
 // leaves, blink the tab title until you come back to it. In-foreground users
@@ -78,7 +98,7 @@ function connect() {
       else systemNote(msg);
     }
   }, 10000);
-  ws.onopen = () => { clearTimeout(slowTimer); ws.send(JSON.stringify({ type: 'join', room: roomHash })); };
+  ws.onopen = () => { clearTimeout(slowTimer); ws.send(JSON.stringify({ type: 'join', room: roomHash, seat })); };
   ws.onmessage = onMessage;
   ws.onclose = onClose;
 }
@@ -103,6 +123,7 @@ async function onMessage(ev) {
   if (m.type === 'joined') {
     reconnectAttempts = 0;
     $('#reconnect').hidden = true;
+    if (bc) bc.postMessage({ room: roomHash, from: seat }); // ask: is the other seat my own tab?
     if ($('#chat-screen').hidden) {
       $('#join-screen').hidden = true;
       $('#chat-screen').hidden = false;
@@ -119,7 +140,9 @@ async function onMessage(ev) {
     $('#chat-screen').hidden = true;
     ws.close();
   } else if (m.type === 'peer') {
-    peerOnline = m.online; peerStatus();
+    peerOnline = m.online;
+    if (!m.online) ownTabPeer = false; // whoever held the other seat is gone
+    peerStatus();
     systemNote(m.online ? 'Your friend joined.' : 'Your friend left — the next message will be lost.');
     flashTitle(m.online ? '• Your friend joined — Bisik' : '• Your friend left — Bisik');
   } else if (m.type === 'dropped') {

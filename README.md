@@ -6,7 +6,7 @@ A two-person chat that deliberately keeps nothing.
 
 Bisik is a web app (installable as a PWA) for talking 1-on-1 under encryption. No accounts, no contact lists, no database. Two people enter the same code and talk. End the session and the messages end with it — no history left anywhere.
 
-**Try it live: https://bisik.ednasalam.com** (version 0.4.2)
+**Try it live: https://bisik.ednasalam.com** (version 0.4.3)
 
 ![The Bisik join screen — one code field, one button, nothing else](docs/screenshot.png)
 
@@ -51,10 +51,10 @@ Needs Node.js 20+.
 ```bash
 npm install
 npm start        # http://localhost:3000
-npm test         # end-to-end suite (10 checks)
+npm test         # end-to-end suite (12 checks)
 ```
 
-The test suite uses the exact same crypto module the browser uses, against a real server: same code can chat, only ciphertext crosses the server, a different code receives nothing, an offline recipient's message is dropped, reconnect works after a hard drop, a 1 MB image arrives intact, message flooding is cut at the cap, and connections from other websites are refused.
+The test suite uses the exact same crypto module the browser uses, against a real server: same code can chat, only ciphertext crosses the server, a different code receives nothing, an offline recipient's message is dropped, reconnect works after a hard drop and never counts your own reconnecting tab as a second person, a 1 MB image arrives intact, message flooding is cut at the cap, and connections from other websites are refused.
 
 This single Node process serves the app files and the WebSocket relay together, so deployment only needs one place that can run a long-lived Node process (a VPS, Fly.io, Render, …). The instance at https://bisik.ednasalam.com runs on Render; `render.yaml` in this repo is its configuration. In production, run it behind HTTPS — WebCrypto and PWAs only work in secure contexts (HTTPS or localhost).
 
