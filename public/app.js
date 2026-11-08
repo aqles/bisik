@@ -48,6 +48,21 @@ function peerStatus() {
                        : 'Waiting for your friend to join… anything sent now will be lost', peerOnline);
 }
 
+// Title flash: if the tab is in the background when your friend arrives or
+// leaves, blink the tab title until you come back to it. In-foreground users
+// already see the status line, so nothing happens for them. No permission
+// prompt, no sound — deliberately quiet.
+let flashTimer = null;
+function flashTitle(text) {
+  if (!document.hidden) return;
+  clearInterval(flashTimer);
+  let show = false;
+  flashTimer = setInterval(() => { document.title = (show = !show) ? text : 'Bisik'; }, 1000);
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { clearInterval(flashTimer); document.title = 'Bisik'; }
+});
+
 function connect() {
   clearTimeout(reconnectTimer);
   $('#reconnect').hidden = true;
@@ -106,6 +121,7 @@ async function onMessage(ev) {
   } else if (m.type === 'peer') {
     peerOnline = m.online; peerStatus();
     systemNote(m.online ? 'Your friend joined.' : 'Your friend left — the next message will be lost.');
+    flashTitle(m.online ? '• Your friend joined — Bisik' : '• Your friend left — Bisik');
   } else if (m.type === 'dropped') {
     // The server discarded a message because the recipient isn't there. Flag it, never resend.
     systemNote("One message wasn't delivered because your friend is offline — it has been discarded.");
