@@ -1,0 +1,11 @@
+# Render Blueprint — satu Web Service menjalankan server.js apa adanya.
+# PORT disediakan otomatis oleh Render (server.js sudah membacanya).
+services:
+  - type: web
+    name: bisik
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeploy: true
