@@ -1,8 +1,8 @@
 // Bisik relay server.
-// Tugasnya cuma satu: meneruskan pesan yang SUDAH terenkripsi dari satu
-// browser ke browser lain yang memakai kode yang sama.
-// Pesan tidak pernah ditulis ke disk, database, atau log. Semuanya hanya
-// lewat di RAM dan hilang begitu diteruskan / koneksi putus.
+// It does exactly one thing: forward ALREADY-encrypted messages from one
+// browser to the other browser that uses the same code.
+// Messages are never written to disk, a database, or a log. Everything only
+// passes through RAM and is gone once forwarded / once the connection drops.
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
@@ -44,13 +44,13 @@ const httpServer = http.createServer(async (req, res) => {
   }
 });
 
-// room hash (SHA-256 dari kode, bukan kodenya sendiri) -> Set isi maks 2 klien
+// room id (derived from the code, never the code itself) -> Set of max 2 clients
 const rooms = new Map();
 
 const wss = new WebSocketServer({ server: httpServer, maxPayload: 10 * 1024 * 1024 });
 
-// Heartbeat: koneksi yang diam terlalu lama (atau mati diam-diam) diputus
-// supaya ruangan tidak penuh oleh hantu dan relay tidak digantung proxy.
+// Heartbeat: connections that stay silent too long (or died quietly) are cut,
+// so rooms don't fill up with ghosts and proxies don't hang the relay.
 const heartbeat = setInterval(() => {
   for (const ws of wss.clients) {
     if (ws.isAlive === false) { ws.terminate(); continue; }
@@ -60,15 +60,15 @@ const heartbeat = setInterval(() => {
 }, 25000);
 wss.on('close', () => clearInterval(heartbeat));
 
-// Batas wajar untuk demo 2-orang: mencegah satu skrip menghabiskan RAM
-// free tier dengan ribuan koneksi, atau membanjiri satu ruangan.
+// Sane limits for a 2-person chat: stops one script from eating the free
+// tier's RAM with thousands of connections, or flooding a single room.
 const MAX_CONN = 200, MAX_PER_IP = 10, MAX_MSG_PER_SEC = 30;
 const perIp = new Map();
 const ALLOWED_HOSTS = new Set(['bisik.onrender.com', 'bisik.ednasalam.com']);
 
 wss.on('connection', (ws, req) => {
-  // Cek Origin: situs lain tidak boleh membuka soket dari browser pengunjungnya.
-  // Klien non-browser (tes) tidak mengirim Origin dan dibiarkan lewat.
+  // Origin check: other websites must not open sockets from their visitors'
+  // browsers. Non-browser clients (the tests) send no Origin and are allowed.
   const origin = req.headers.origin;
   if (origin) {
     let host = '';
@@ -92,7 +92,7 @@ wss.on('connection', (ws, req) => {
     if (m.type === 'join' && typeof m.room === 'string' && /^[a-f0-9]{64}$/.test(m.room)) {
       let set = rooms.get(m.room);
       if (!set) rooms.set(m.room, (set = new Set()));
-      for (const p of set) if (p.readyState !== 1) set.delete(p); // bersihkan sisa koneksi mati
+      for (const p of set) if (p.readyState !== 1) set.delete(p); // prune dead connections
       if (set.size >= 2) { ws.send(JSON.stringify({ type: 'full' })); ws.close(); return; }
       room = m.room;
       set.add(ws);
@@ -104,11 +104,11 @@ wss.on('connection', (ws, req) => {
     if (m.type === 'msg' && room && typeof m.data === 'string') {
       const now = Date.now();
       if (now - winStart > 1000) { winStart = now; winCount = 0; }
-      if (++winCount > MAX_MSG_PER_SEC) return; // banjir: buang diam-diam
+      if (++winCount > MAX_MSG_PER_SEC) return; // flooding: drop silently
       const set = rooms.get(room);
       const peer = set && [...set].find((p) => p !== ws);
       if (!peer) {
-        // Penerima offline: pesan dibuang, tidak diantrekan, tidak disimpan.
+        // Recipient offline: the message is discarded — not queued, not stored.
         ws.send(JSON.stringify({ type: 'dropped' }));
         return;
       }
@@ -126,4 +126,4 @@ wss.on('connection', (ws, req) => {
   });
 });
 
-httpServer.listen(PORT, () => console.log(`Bisik jalan di http://localhost:${PORT}`));
+httpServer.listen(PORT, () => console.log(`Bisik running at http://localhost:${PORT}`));

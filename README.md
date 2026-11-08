@@ -1,64 +1,64 @@
 # Bisik
 
-Chat berdua yang sengaja tidak menyimpan apa-apa.
+A two-person chat that deliberately keeps nothing.
 
-Bisik adalah aplikasi web (bisa diinstal sebagai PWA) untuk mengobrol 1-on-1 secara terenkripsi. Tidak ada akun, tidak ada daftar kontak, tidak ada database. Dua orang memasukkan kode yang sama, lalu mengobrol. Selesai sesi, selesai juga pesannya — tidak ada riwayat yang tertinggal di mana pun.
+Bisik is a web app (installable as a PWA) for talking 1-on-1 under encryption. No accounts, no contact lists, no database. Two people enter the same code and talk. End the session and the messages end with it — no history left anywhere.
 
-**Coba langsung: https://bisik.ednasalam.com** (versi 0.3.0)
+**Try it live: https://bisik.ednasalam.com** (version 0.4.0)
 
-## Cara pakai
+## How to use it
 
-1. Buka Bisik, buat kode acak atau ketik kode sendiri (minimal 8 karakter).
-2. Bagikan kode itu ke temanmu lewat jalur lain — tatap muka, telepon, kertas. Kode ini kunci enkripsinya, jadi jangan disebar sembarangan.
-3. Temanmu membuka Bisik dan memasukkan kode yang persis sama — persis beneran, huruf besar dan kecil dianggap beda.
-4. Mengobrol seperti biasa. Bisa teks dan gambar (maks 5 MB).
+1. Open Bisik and make a random code, or type your own (at least 8 characters).
+2. Share that code with your friend through another channel — in person, on a call, on paper. The code is the encryption key, so don't spread it around.
+3. Your friend opens Bisik and enters the exact same code — exact means exact, capitals are different characters.
+4. Talk as usual. Text and images (up to 5 MB) both work.
 
-Ada sidik jari ruangan 6 karakter di bagian atas layar chat. Samakan dengan punya temanmu — kalau sama, kalian benar-benar memakai kode yang sama.
+There's a 6-character room fingerprint at the top of the chat screen. Compare it with your friend's — if they match, you're really using the same code.
 
-## Fitur
+## Features
 
-- **Teks + gambar** sampai 5 MB, semuanya terenkripsi di browser sebelum dikirim.
-- **Sambung ulang otomatis** kalau koneksi putus di tengah jalan (bisa dimatikan), plus tombol "Sambungkan lagi" untuk menyambung manual ke ruangan yang sama tanpa memuat ulang halaman — riwayat di layar tidak hilang.
-- **Halaman Privasi, Syarat, dan Cara kerja keamanan** di dalam aplikasi, ditulis apa adanya: apa yang disimpan (tidak ada), apa yang tetap terlihat oleh penyedia hosting (alamat IP), dan batas perlindungannya.
-- **Batas pemakaian di server**: satu ruangan maksimal 2 orang, ada batas jumlah koneksi dan kecepatan kirim pesan, plus header keamanan standar dan penolakan koneksi dari situs lain.
-- **Bisa diinstal sebagai PWA** dengan ikon generik bergaya catatan — memang sengaja tidak kelihatan seperti aplikasi chat.
+- **Text + images** up to 5 MB, all encrypted in the browser before being sent.
+- **Automatic reconnect** when the connection drops mid-chat (can be switched off), plus a manual "Reconnect" button that rejoins the same room without reloading the page — the on-screen history survives.
+- **Privacy, Terms, and Security pages** inside the app, written plainly: what is stored (nothing), what the hosting provider can still see (your IP address), and where the protection ends.
+- **Server-side limits**: max 2 people per room, caps on total connections and message rate, standard security headers, and WebSocket connections from other websites are refused.
+- **Installable as a PWA** with a generic notes-style icon — deliberately not chat-looking.
 
-## Kenapa bisa tanpa database
+## Why it needs no database
 
-Begitu kode dimasukkan, browser menurunkan dua hal dari kode itu:
+When you enter a code, your browser derives two things from it:
 
-- **Penanda ruangan** — diturunkan dari proses PBKDF2 yang sama (bukan hash cepat), ini yang dikirim ke server sekadar untuk mempertemukan dua browser yang memakai kode yang sama. Isi ruangan maksimal 2 orang. Karena turunannya mahal untuk ditebak, penanda ini tidak bisa dipakai menggoreng kode secara offline.
-- **Kunci enkripsi** (PBKDF2 + AES-GCM 256-bit) — diturunkan bersamaan dengan penanda ruangan dari satu proses PBKDF2, dan tidak pernah meninggalkan browser. Semua pesan dan gambar dienkripsi dulu di browser pengirim, dibuka lagi di browser penerima.
+- **The room id** — derived by the same PBKDF2 process (not a fast hash), this is the only thing sent to the server, just to pair up the two browsers using the same code. A room holds at most 2 people. Because the derivation is expensive to compute, the room id can't be used to grind through possible codes offline.
+- **The encryption key** (PBKDF2 + AES-GCM 256-bit) — derived together with the room id in a single PBKDF2 run, and it never leaves the browser. Every message and image is encrypted in the sender's browser first, and only opened again in the recipient's.
 
-Server relay di tengah hanya meneruskan teks acak hasil enkripsi dari RAM. Ia tidak menulis apa pun ke disk, tidak mencatat isi pesan, dan tidak mengantrekan pesan: kalau temanmu sedang offline, pesanmu langsung dibuang dan kamu diberi tahu. Riwayat chat hanya ada di memori halaman yang sedang terbuka — refresh halaman, riwayat ikut hilang.
+The relay server in the middle only forwards the resulting random-looking encrypted text from RAM. It writes nothing to disk, logs no message contents, and never queues anything: if your friend is offline, your message is discarded immediately and you're told so. Chat history exists only in the memory of the open page — refresh the page and it's gone.
 
-## Batasannya, biar jelas
+## The limits, stated plainly
 
-- **Kalau temanmu offline, pesan hilang.** Ini konsekuensi yang memang dipilih, bukan bug. Tidak ada "pesan akan terkirim saat dia online".
-- **Sekali sesi selesai, tidak bisa dibuka lagi.** Tidak ada cadangan, tidak ada pemulihan.
-- **Keamanan Bisik sekuat kodenya.** Kode pendek atau gampang ditebak (tanggal lahir, "rahasia123") bisa dicoba-coba orang. Pakai kode acak bawaan atau kode custom yang panjang.
-- Bisik melindungi pesan selama perjalanan dan di server. Ia tidak bisa melindungi kalau perangkatmu sendiri sudah disusupi, atau kalau lawan bicaramu memotret layar.
+- **If your friend is offline, the message is gone.** That's a chosen consequence, not a bug. There is no "it'll send when they're back".
+- **Once a session ends, it can't be reopened.** No backups, no recovery.
+- **Bisik is only as strong as its code.** A short or guessable code (a birthday, "secret123") can be tried by others. Use the built-in random code or a long custom one.
+- Bisik protects messages in transit and on the server. It can't help if your own device is already compromised, or if the person you're talking to photographs the screen.
 
-## Jalanin sendiri
+## Run it yourself
 
-Butuh Node.js 18+.
+Needs Node.js 18+.
 
 ```bash
 npm install
 npm start        # http://localhost:3000
-npm test         # tes ujung-ke-ujung (10 pemeriksaan)
+npm test         # end-to-end suite (10 checks)
 ```
 
-Tesnya memakai modul kripto yang sama persis dengan yang dipakai browser, terhadap server beneran: kode sama bisa ngobrol, yang lewat server cuma teks terenkripsi, kode beda tidak nyasar, penerima offline pesannya dibuang, sambung ulang setelah putus kasar, gambar 1 MB terkirim utuh, banjir pesan dipotong di batasnya, dan koneksi dari situs lain ditolak.
+The test suite uses the exact same crypto module the browser uses, against a real server: same code can chat, only ciphertext crosses the server, a different code receives nothing, an offline recipient's message is dropped, reconnect works after a hard drop, a 1 MB image arrives intact, message flooding is cut at the cap, and connections from other websites are refused.
 
-Satu proses Node ini melayani file aplikasinya sekaligus relay WebSocket-nya, jadi deploy-nya cukup di satu tempat yang bisa menjalankan proses Node jangka panjang (misalnya VPS, Fly.io, atau Render). Versi yang berjalan di https://bisik.ednasalam.com di-hosting di Render; `render.yaml` di repo ini adalah konfigurasinya. Untuk produksi, jalankan di balik HTTPS — WebCrypto dan PWA memang hanya aktif di konteks aman (HTTPS atau localhost).
+This single Node process serves the app files and the WebSocket relay together, so deployment only needs one place that can run a long-lived Node process (a VPS, Fly.io, Render, …). The instance at https://bisik.ednasalam.com runs on Render; `render.yaml` in this repo is its configuration. In production, run it behind HTTPS — WebCrypto and PWAs only work in secure contexts (HTTPS or localhost).
 
-## Isi repo
+## What's in the repo
 
-- `server.js` — server statis + relay WebSocket. Sengaja kecil, silakan dibaca habis sebelum percaya.
-- `public/` — aplikasi web-nya (HTML/CSS/JS polos, tanpa framework, tanpa build), termasuk `crypto.js` (semua urusan enkripsi, dipakai bersama oleh aplikasi dan tes) dan halaman `privacy.html`, `terms.html`, `security.html`.
-- `test/e2e.mjs` — tes ujung-ke-ujung terhadap server beneran.
+- `server.js` — the static server + WebSocket relay. Deliberately small; please read it end-to-end before trusting it.
+- `public/` — the web app (plain HTML/CSS/JS, no framework, no build step), including `crypto.js` (all the encryption, shared by the app and the tests) and the `privacy.html`, `terms.html`, `security.html` pages.
+- `test/e2e.mjs` — the end-to-end tests against a real server.
 
-## Lisensi
+## License
 
 MIT

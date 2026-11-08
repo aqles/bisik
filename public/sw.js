@@ -1,10 +1,10 @@
-// Service worker Bisik: cache HANYA file aplikasi (shell), supaya bisa
-// diinstal sebagai PWA. Isi chat tidak pernah lewat sini dan tidak pernah
-// di-cache — chat berjalan lewat WebSocket, bukan HTTP.
-// Strategi network-first: versi terbaru selalu diutamakan, cache cuma
-// cadangan saat offline. (Cache-first versi lama membuat update bergantung
-// pada ingatan manusia mengganti nama cache di setiap rilis.)
-const CACHE = 'bisik-v3';
+// Bisik service worker: caches ONLY the app files (the shell), so the app
+// can be installed as a PWA. Chat contents never pass through here and are
+// never cached — chat runs over WebSocket, not HTTP.
+// Network-first strategy: the latest version always wins, the cache is just
+// an offline fallback. (The old cache-first version made updates depend on
+// a human remembering to rename the cache every release.)
+const CACHE = 'bisik-v4';
 const SHELL = ['/', '/index.html', '/style.css', '/app.js', '/crypto.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/privacy.html', '/terms.html', '/security.html'];
 
 self.addEventListener('install', (e) => {

@@ -1,57 +1,57 @@
 <!doctype html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Keamanan — Bisik</title>
+<title>Security — Bisik</title>
 <meta name="theme-color" content="#f59e0b">
 <link rel="icon" href="/icon-192.png">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <main class="doc">
-  <a class="back" href="/">← Kembali ke Bisik</a>
-  <h1>Cara Kerja Keamanan Bisik</h1>
-  <p class="updated">Terakhir diperbarui: 8 November 2026</p>
+  <a class="back" href="/">← Back to Bisik</a>
+  <h1>How Bisik's Security Works</h1>
+  <p class="updated">Last updated: November 8, 2026</p>
 
-  <h2>Dari kode menjadi kunci</h2>
-  <p>Saat kamu memasukkan kode, browsermu menurunkan dua hal dari kode itu.
-  Satu proses PBKDF2 (250.000 putaran) menghasilkan dua hal sekaligus: penanda
-  ruangan — inilah satu-satunya yang dikirim ke server, sekadar untuk
-  mempertemukan dua browser berkode sama (satu ruangan maksimal berisi dua
-  orang) — dan kunci enkripsi AES-GCM 256-bit, yang tidak pernah meninggalkan
-  browsermu. Penanda ruangan sengaja diturunkan dengan cara yang mahal ini juga,
-  supaya tidak bisa dipakai untuk menebak kode secara offline.</p>
+  <h2>From a code to a key</h2>
+  <p>When you type a code, your browser derives two things from it. One PBKDF2 process
+  (250,000 iterations) produces both at once: the room id — the only thing ever sent to
+  the server, just to pair up two browsers using the same code (a room holds at most
+  two people) — and the AES-GCM 256-bit encryption key, which never leaves your
+  browser. The room id is deliberately derived the expensive way as well, so it can't
+  be used to guess your code offline.</p>
 
-  <h2>Perjalanan sebuah pesan</h2>
-  <p>Pesan dan gambar dienkripsi di browser pengirim dengan IV acak yang berbeda
-  untuk setiap pesan, diteruskan server relay dalam keadaan terenkripsi lewat
-  memori saja, lalu dibuka di browser penerima. Server tidak punya kunci, jadi
-  andaikan lalu lintasnya disadap atau servernya dibobol, yang didapat hanya teks
-  acak. Enam karakter di bagian atas layar chat adalah sidik jari ruanganmu —
-  samakan dengan milik temanmu untuk memastikan kalian memakai kode yang sama.</p>
+  <h2>The journey of a message</h2>
+  <p>Messages and images are encrypted in the sender's browser with a fresh random IV
+  for every message, relayed by the server in encrypted form from memory only, then
+  opened in the recipient's browser. The server has no key, so if its traffic were
+  intercepted or the server itself breached, all anyone would get is random-looking
+  text. The six characters at the top of the chat screen are your room fingerprint —
+  compare them with your friend's to be sure you're both using the same code.</p>
 
-  <h2>Yang dilindungi</h2>
-  <p>Isi obrolanmu dari pengintip di jaringan, dari penyedia hosting, dan dari
-  siapa pun yang tidak memegang kodenya. Tidak ada riwayat yang bisa diminta,
-  dicuri, atau bocor dari server, karena memang tidak ada yang disimpan.</p>
+  <h2>What it protects</h2>
+  <p>Your conversation's contents from network snoopers, from the hosting provider, and
+  from anyone who doesn't hold the code. There is no history that could be demanded,
+  stolen, or leaked from the server, because nothing is ever stored.</p>
 
-  <h2>Yang tidak bisa dilindungi</h2>
-  <p>Bisik tidak bisa melindungi kalau perangkatmu sendiri sudah disusupi, kalau
-  lawan bicaramu memotret layar atau meneruskan isi obrolan, atau kalau kodemu
-  lemah dan berhasil ditebak — kode seperti tanggal lahir atau "rahasia123" bisa
-  dicoba-coba orang. Alamat IP-mu juga tetap terlihat oleh jaringan dan penyedia
-  hosting, seperti situs web mana pun.</p>
+  <h2>What it cannot protect</h2>
+  <p>Bisik can't help if your own device is already compromised, if the person you're
+  talking to photographs the screen or forwards the contents, or if your code is weak
+  and gets guessed — codes like a birthday or "secret123" can be tried by anyone. Your
+  IP address also remains visible to the network and the hosting provider, like any
+  website.</p>
 
-  <h2>Tips pakai yang aman</h2>
-  <p>Pakai kode acak bawaan atau kode custom yang panjang dan tidak bermakna pribadi.
-  Bagikan kode lewat jalur yang berbeda dari jalur obrolannya. Cocokkan sidik jari
-  ruangan sebelum membahas hal sensitif. Akhiri sesi setelah selesai.</p>
+  <h2>Tips for staying safe</h2>
+  <p>Use the built-in random code, or a long custom code with no personal meaning.
+  Share the code through a different channel than the conversation itself. Compare
+  room fingerprints before discussing anything sensitive. End the session when you're
+  done.</p>
 
   <footer class="links">
-    <a href="/privacy.html">Privasi</a> ·
-    <a href="/terms.html">Ketentuan</a> ·
-    <a href="/security.html">Keamanan</a>
+    <a href="/privacy.html">Privacy</a> ·
+    <a href="/terms.html">Terms</a> ·
+    <a href="/security.html">Security</a>
   </footer>
 </main>
 </body>

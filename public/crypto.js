@@ -1,14 +1,14 @@
-// Kripto Bisik — dipakai bersama oleh aplikasi browser (app.js) dan tes
-// (test/e2e.mjs), supaya yang dites persis yang jalan di browser.
+// Bisik crypto — shared by the browser app (app.js) and the tests
+// (test/e2e.mjs), so what gets tested is exactly what runs in the browser.
 //
-// Satu kali PBKDF2 (250.000 putaran) dari kode bersama menghasilkan 64 byte:
-// 32 byte pertama = kunci AES-GCM, 32 byte berikutnya = penanda ruangan.
-// Penanda ruangan sengaja ikut mahal ditebak: versi lama memakainya dari
-// SHA-256 polos yang bisa dicoba miliaran kali per detik.
+// One PBKDF2 run (250,000 iterations) from the shared code produces 64 bytes:
+// the first 32 bytes are the AES-GCM key, the next 32 are the room id.
+// The room id is deliberately expensive to guess too: the old version used a
+// plain SHA-256 of the code, which can be tried billions of times per second.
 const enc = new TextEncoder();
 
-// Base64 per potongan 32KB — versi menumpuk-sekaligus (`...` spread) melempar
-// RangeError untuk data di atas beberapa ratus KB (bug kirim gambar, v0.2).
+// Chunked base64 (32 KB at a time) — the all-at-once version (`...` spread)
+// throws RangeError on data above a few hundred KB (the v0.2 image bug).
 export function b64(buf) {
   const bytes = new Uint8Array(buf);
   let s = '';

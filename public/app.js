@@ -1,24 +1,24 @@
-// Bisik — semua enkripsi terjadi di browser ini (WebCrypto).
-// Kunci diturunkan dari kode bersama dan TIDAK PERNAH dikirim ke server.
-// Server hanya menerima hash ruangan (untuk mempertemukan 2 orang) dan
-// meneruskan ciphertext. Riwayat chat hanya ada di variabel halaman ini:
-// refresh / tutup tab = hilang. Tidak ada localStorage/sessionStorage.
+// Bisik — all encryption happens in this browser (WebCrypto).
+// The key is derived from the shared code and is NEVER sent to the server.
+// The server only receives the room id (to pair two people up) and relays
+// ciphertext. Chat history lives only in this page's variables:
+// refresh / close the tab = gone. No localStorage/sessionStorage anywhere.
 import { deriveSession, encryptWith, decryptWith } from './crypto.js';
 
 const $ = (s) => document.querySelector(s);
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
-const WORDS = ['senja','kopi','bulan','hujan','angin','laut','buku','kunci','meja','lampu',
-  'pagi','sore','malam','bintang','awan','sungai','gunung','pantai','taman','roti',
-  'susu','gitar','piano','kursi','pintu','jendela','kertas','pensil','tas','sepatu',
-  'kucing','burung','ikan','kuda','pohon','daun','bunga','tanah','api','air',
-  'jalan','kota','desa','pasar','kereta','perahu','layang','cermin','jam','peta'];
+const WORDS = ['amber','anchor','apple','arrow','atlas','autumn','bamboo','banana','beacon','berry',
+  'birch','breeze','bridge','brook','candle','canyon','cedar','cherry','cinder','cliff',
+  'cloud','clover','coast','comet','copper','coral','cosmos','cricket','delta','desert',
+  'ember','falcon','fern','fjord','flint','forest','garnet','glacier','harbor','hazel',
+  'heron','ivory','jasmine','juniper','lagoon','lantern','laurel','linden','meadow','mercury'];
 
 let ws, key, roomHash, peerOnline = false;
-let leaving = false;          // true kalau user sendiri yang mengakhiri sesi
+let leaving = false;          // true when the user ends the session themselves
 let reconnectTimer = null, reconnectAttempts = 0, slowTimer = null;
-const pending = new Map(); // id -> elemen bubble (buat tanda gagal kalau penerima offline)
+const pending = new Map(); // id -> bubble element (to flag failures when the peer is offline)
 
 const encrypt = (kind, data, mime) => encryptWith(key, kind, data, mime);
 const decrypt = (envelope) => decryptWith(key, envelope);
@@ -44,8 +44,8 @@ function setStatus(text, online) {
 }
 
 function peerStatus() {
-  setStatus(peerOnline ? 'Teman terhubung — pesan terenkripsi ujung-ke-ujung'
-                       : 'Menunggu teman masuk… pesan yang dikirim sekarang akan hilang', peerOnline);
+  setStatus(peerOnline ? 'Friend connected — messages are end-to-end encrypted'
+                       : 'Waiting for your friend to join… anything sent now will be lost', peerOnline);
 }
 
 function connect() {
@@ -53,12 +53,12 @@ function connect() {
   $('#reconnect').hidden = true;
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   ws = new WebSocket(`${proto}//${location.host}`);
-  // Hosting gratis tertidur saat sepi; bangunnya bisa ±30 detik. Beri tahu
-  // user supaya tidak mengira aplikasinya rusak.
+  // Free hosting sleeps when idle and can take ±30 s to wake. Tell the user,
+  // so they don't think the app is broken.
   clearTimeout(slowTimer);
   slowTimer = setTimeout(() => {
     if (ws.readyState !== 1) {
-      const msg = 'Server lagi bangun (hosting gratis sempat tidur) — tunggu sebentar, masih dicoba…';
+      const msg = 'The server is waking up (free hosting naps when idle) — hang on, still trying…';
       if ($('#chat-screen').hidden) $('#join-error').textContent = msg;
       else systemNote(msg);
     }
@@ -71,15 +71,15 @@ function connect() {
 function onClose() {
   if (leaving) return;
   peerOnline = false;
-  setStatus('Koneksi putus', false);
+  setStatus('Disconnected', false);
   $('#reconnect').hidden = false;
   if ($('#auto-reconnect').checked && reconnectAttempts < 10) {
     const delay = Math.min(1000 * 2 ** reconnectAttempts, 15000);
     reconnectAttempts++;
-    systemNote(`Koneksi putus. Menyambung ulang otomatis dalam ${Math.round(delay / 1000)} detik… (atau klik "Sambungkan lagi")`);
+    systemNote(`Connection lost. Reconnecting automatically in ${Math.round(delay / 1000)} seconds… (or tap "Reconnect")`);
     reconnectTimer = setTimeout(connect, delay);
   } else {
-    systemNote('Koneksi putus. Klik "Sambungkan lagi" untuk masuk ke ruangan yang sama — riwayat di layar ini tidak hilang.');
+    systemNote('Connection lost. Tap "Reconnect" to rejoin the same room — the history on this screen stays put.');
   }
 }
 
@@ -92,27 +92,27 @@ async function onMessage(ev) {
       $('#join-screen').hidden = true;
       $('#chat-screen').hidden = false;
       $('#fingerprint').textContent = '#' + roomHash.slice(0, 6);
-      systemNote('Sesi mulai. Pesan di sesi ini tidak disimpan di mana pun.');
+      systemNote('Session started. Nothing in this session is stored anywhere.');
     } else {
-      systemNote('Berhasil menyambung ulang.');
+      systemNote('Reconnected.');
     }
     peerOnline = m.peers > 1; peerStatus();
   } else if (m.type === 'full') {
-    leaving = true; // jangan reconnect — memang ditolak server
-    $('#join-error').textContent = 'Ruangan kode ini sudah berisi 2 orang.';
+    leaving = true; // don't reconnect — the server refused us on purpose
+    $('#join-error').textContent = 'That code already has 2 people in its room.';
     $('#join-screen').hidden = false;
     $('#chat-screen').hidden = true;
     ws.close();
   } else if (m.type === 'peer') {
     peerOnline = m.online; peerStatus();
-    systemNote(m.online ? 'Temanmu masuk.' : 'Temanmu keluar — pesan berikutnya akan hilang.');
+    systemNote(m.online ? 'Your friend joined.' : 'Your friend left — the next message will be lost.');
   } else if (m.type === 'dropped') {
-    // Server membuang pesan karena penerima tidak ada. Tandai, jangan kirim ulang.
-    systemNote('Satu pesan tidak terkirim karena teman offline — pesan itu dihapus.');
+    // The server discarded a message because the recipient isn't there. Flag it, never resend.
+    systemNote("One message wasn't delivered because your friend is offline — it has been discarded.");
     for (const el of pending.values()) {
       el.classList.add('failed');
       const meta = document.createElement('div');
-      meta.className = 'meta'; meta.textContent = 'tidak terkirim — hilang';
+      meta.className = 'meta'; meta.textContent = 'not delivered — gone';
       el.append(meta);
     }
     pending.clear();
@@ -123,11 +123,11 @@ async function onMessage(ev) {
       else addBubble(false, (el) => {
         const img = document.createElement('img');
         img.src = URL.createObjectURL(new Blob([m2.data], { type: m2.mime }));
-        img.alt = 'Gambar terenkripsi dari teman';
+        img.alt = 'Encrypted image from your friend';
         el.append(img);
       });
     } catch {
-      systemNote('Ada pesan masuk yang tidak bisa dibuka dengan kodemu.');
+      systemNote("A message arrived that can't be opened with your code.");
     }
   }
 }
@@ -145,14 +145,14 @@ $('#gen').addEventListener('click', () => {
   $('#join-error').textContent = '';
 });
 
-// shortcut: kode acak 4 kata + 4 angka itu gampang dibagikan tapi entropinya
-// terbatas. Buat pemakaian serius anjurkan kode custom yang panjang (lihat README).
+// shortcut: a random code of 4 words + 4 digits is easy to share but has
+// limited entropy. For serious use, recommend a long custom code (see README).
 $('#enter').addEventListener('click', async () => {
-  // Kode dipakai persis seperti diketik (huruf besar/kecil beda) — memaksa
-  // huruf kecil diam-diam memotong kekuatan kode custom.
+  // The code is used exactly as typed (capitals are different characters) —
+  // forcing lowercase would silently weaken custom codes.
   const code = $('#code').value.trim();
-  if (code.length < 8) { $('#join-error').textContent = 'Kode minimal 8 karakter.'; return; }
-  $('#join-error').textContent = 'Menyiapkan kunci enkripsi…';
+  if (code.length < 8) { $('#join-error').textContent = 'The code needs at least 8 characters.'; return; }
+  $('#join-error').textContent = 'Preparing the encryption key…';
   ({ key, room: roomHash } = await deriveSession(code));
   leaving = false;
   connect();
@@ -164,7 +164,7 @@ $('#composer').addEventListener('submit', async (e) => {
   e.preventDefault();
   const text = $('#text').value.trim();
   if (!text || !ws || ws.readyState !== 1) {
-    if (text) systemNote('Belum tersambung — pesan tidak dikirim.');
+    if (text) systemNote("Not connected — message wasn't sent.");
     return;
   }
   $('#text').value = '';
@@ -179,12 +179,12 @@ $('#file').addEventListener('change', async () => {
   const file = $('#file').files[0];
   $('#file').value = '';
   if (!file) return;
-  if (!ws || ws.readyState !== 1) { systemNote('Belum tersambung — gambar tidak dikirim.'); return; }
-  if (file.size > 5 * 1024 * 1024) { systemNote('Gambar kegedean — maksimal 5 MB.'); return; }
+  if (!ws || ws.readyState !== 1) { systemNote("Not connected — image wasn't sent."); return; }
+  if (file.size > 5 * 1024 * 1024) { systemNote('That image is too big — 5 MB max.'); return; }
   const buf = await file.arrayBuffer();
   const el = addBubble(true, (b) => {
     const img = document.createElement('img');
-    img.src = URL.createObjectURL(file); img.alt = 'Gambar yang kamu kirim';
+    img.src = URL.createObjectURL(file); img.alt = 'Image you sent';
     b.append(img);
   });
   const id = await sendPayload(await encrypt('image', buf, file.type));
@@ -192,6 +192,6 @@ $('#file').addEventListener('change', async () => {
   setTimeout(() => pending.delete(id), 1500);
 });
 
-$('#leave').addEventListener('click', () => { leaving = true; location.reload(); }); // reload = semua hilang
+$('#leave').addEventListener('click', () => { leaving = true; location.reload(); }); // reload = everything gone
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');

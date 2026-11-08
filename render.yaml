@@ -1,5 +1,5 @@
-# Render Blueprint — satu Web Service menjalankan server.js apa adanya.
-# PORT disediakan otomatis oleh Render (server.js sudah membacanya).
+# Render Blueprint — one Web Service running server.js as-is.
+# PORT is provided automatically by Render (server.js already reads it).
 services:
   - type: web
     name: bisik
