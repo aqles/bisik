@@ -17,8 +17,8 @@ Ada sidik jari ruangan 6 karakter di bagian atas layar chat. Samakan dengan puny
 
 Begitu kode dimasukkan, browser menurunkan dua hal dari kode itu:
 
-- **Hash ruangan** (SHA-256) — ini yang dikirim ke server, sekadar untuk mempertemukan dua browser yang memakai kode yang sama. Isi ruangan maksimal 2 orang.
-- **Kunci enkripsi** (PBKDF2 + AES-GCM 256-bit) — ini tidak pernah meninggalkan browser. Semua pesan dan gambar dienkripsi dulu di browser pengirim, dibuka lagi di browser penerima.
+- **Penanda ruangan** — diturunkan dari proses PBKDF2 yang sama (bukan hash cepat), ini yang dikirim ke server sekadar untuk mempertemukan dua browser yang memakai kode yang sama. Isi ruangan maksimal 2 orang. Karena turunannya mahal untuk ditebak, penanda ini tidak bisa dipakai menggoreng kode secara offline.
+- **Kunci enkripsi** (PBKDF2 + AES-GCM 256-bit) — diturunkan bersamaan dengan penanda ruangan dari satu proses PBKDF2, dan tidak pernah meninggalkan browser. Semua pesan dan gambar dienkripsi dulu di browser pengirim, dibuka lagi di browser penerima.
 
 Server relay di tengah hanya meneruskan teks acak hasil enkripsi dari RAM. Ia tidak menulis apa pun ke disk, tidak mencatat isi pesan, dan tidak mengantrekan pesan: kalau temanmu sedang offline, pesanmu langsung dibuang dan kamu diberi tahu. Riwayat chat hanya ada di memori halaman yang sedang terbuka — refresh halaman, riwayat ikut hilang.
 

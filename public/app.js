@@ -3,6 +3,8 @@
 // Server hanya menerima hash ruangan (untuk mempertemukan 2 orang) dan
 // meneruskan ciphertext. Riwayat chat hanya ada di variabel halaman ini:
 // refresh / tutup tab = hilang. Tidak ada localStorage/sessionStorage.
+import { deriveSession, encryptWith, decryptWith } from './crypto.js';
+
 const $ = (s) => document.querySelector(s);
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -15,36 +17,11 @@ const WORDS = ['senja','kopi','bulan','hujan','angin','laut','buku','kunci','mej
 
 let ws, key, roomHash, peerOnline = false;
 let leaving = false;          // true kalau user sendiri yang mengakhiri sesi
-let reconnectTimer = null, reconnectAttempts = 0;
+let reconnectTimer = null, reconnectAttempts = 0, slowTimer = null;
 const pending = new Map(); // id -> elemen bubble (buat tanda gagal kalau penerima offline)
 
-const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
-const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
-
-async function sha256Hex(text) {
-  const h = await crypto.subtle.digest('SHA-256', enc.encode(text));
-  return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function deriveKey(code) {
-  const material = await crypto.subtle.importKey('raw', enc.encode(code), 'PBKDF2', false, ['deriveKey']);
-  const salt = await crypto.subtle.digest('SHA-256', enc.encode('bisik-salt-v1:' + code));
-  return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 250000, hash: 'SHA-256' },
-    material, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
-}
-
-async function encrypt(kind, data, mime) {
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data);
-  return JSON.stringify({ kind, mime, iv: b64(iv), ct: b64(ct) });
-}
-
-async function decrypt(envelope) {
-  const m = JSON.parse(envelope);
-  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(m.iv) }, key, unb64(m.ct));
-  return { ...m, data: pt };
-}
+const encrypt = (kind, data, mime) => encryptWith(key, kind, data, mime);
+const decrypt = (envelope) => decryptWith(key, envelope);
 
 function systemNote(text) {
   const el = document.createElement('div');
@@ -76,7 +53,17 @@ function connect() {
   $('#reconnect').hidden = true;
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   ws = new WebSocket(`${proto}//${location.host}`);
-  ws.onopen = () => ws.send(JSON.stringify({ type: 'join', room: roomHash }));
+  // Hosting gratis tertidur saat sepi; bangunnya bisa ±30 detik. Beri tahu
+  // user supaya tidak mengira aplikasinya rusak.
+  clearTimeout(slowTimer);
+  slowTimer = setTimeout(() => {
+    if (ws.readyState !== 1) {
+      const msg = 'Server lagi bangun (hosting gratis sempat tidur) — tunggu sebentar, masih dicoba…';
+      if ($('#chat-screen').hidden) $('#join-error').textContent = msg;
+      else systemNote(msg);
+    }
+  }, 10000);
+  ws.onopen = () => { clearTimeout(slowTimer); ws.send(JSON.stringify({ type: 'join', room: roomHash })); };
   ws.onmessage = onMessage;
   ws.onclose = onClose;
 }
@@ -161,11 +148,12 @@ $('#gen').addEventListener('click', () => {
 // shortcut: kode acak 4 kata + 4 angka itu gampang dibagikan tapi entropinya
 // terbatas. Buat pemakaian serius anjurkan kode custom yang panjang (lihat README).
 $('#enter').addEventListener('click', async () => {
-  const code = $('#code').value.trim().toLowerCase();
+  // Kode dipakai persis seperti diketik (huruf besar/kecil beda) — memaksa
+  // huruf kecil diam-diam memotong kekuatan kode custom.
+  const code = $('#code').value.trim();
   if (code.length < 8) { $('#join-error').textContent = 'Kode minimal 8 karakter.'; return; }
   $('#join-error').textContent = 'Menyiapkan kunci enkripsi…';
-  roomHash = await sha256Hex('bisik-room-v1:' + code);
-  key = await deriveKey(code);
+  ({ key, room: roomHash } = await deriveSession(code));
   leaving = false;
   connect();
 });

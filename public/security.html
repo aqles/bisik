@@ -16,10 +16,12 @@
 
   <h2>Dari kode menjadi kunci</h2>
   <p>Saat kamu memasukkan kode, browsermu menurunkan dua hal dari kode itu.
-  Pertama, hash SHA-256 sebagai penanda ruangan — inilah satu-satunya yang dikirim
-  ke server, sekadar untuk mempertemukan dua browser berkode sama (satu ruangan
-  maksimal berisi dua orang). Kedua, kunci enkripsi AES-GCM 256-bit yang diturunkan
-  dengan PBKDF2 (250.000 putaran) — kunci ini tidak pernah meninggalkan browsermu.</p>
+  Satu proses PBKDF2 (250.000 putaran) menghasilkan dua hal sekaligus: penanda
+  ruangan — inilah satu-satunya yang dikirim ke server, sekadar untuk
+  mempertemukan dua browser berkode sama (satu ruangan maksimal berisi dua
+  orang) — dan kunci enkripsi AES-GCM 256-bit, yang tidak pernah meninggalkan
+  browsermu. Penanda ruangan sengaja diturunkan dengan cara yang mahal ini juga,
+  supaya tidak bisa dipakai untuk menebak kode secara offline.</p>
 
   <h2>Perjalanan sebuah pesan</h2>
   <p>Pesan dan gambar dienkripsi di browser pengirim dengan IV acak yang berbeda

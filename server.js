@@ -20,6 +20,15 @@ const MIME = {
   '.json': 'application/json',
 };
 
+const HEADERS = {
+  'Content-Security-Policy': "default-src 'self'; img-src 'self' blob: data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'",
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'no-referrer',
+  'X-Robots-Tag': 'noindex, nofollow',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+};
+
 const httpServer = http.createServer(async (req, res) => {
   try {
     let path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
@@ -27,10 +36,10 @@ const httpServer = http.createServer(async (req, res) => {
     const file = normalize(join(PUBLIC, path));
     if (!file.startsWith(PUBLIC)) throw new Error('forbidden');
     const body = await readFile(file);
-    res.writeHead(200, { 'Content-Type': MIME[extname(file)] || 'application/octet-stream' });
+    res.writeHead(200, { ...HEADERS, 'Content-Type': MIME[extname(file)] || 'application/octet-stream' });
     res.end(body);
   } catch {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.writeHead(404, { ...HEADERS, 'Content-Type': 'text/plain' });
     res.end('404');
   }
 });
@@ -51,10 +60,30 @@ const heartbeat = setInterval(() => {
 }, 25000);
 wss.on('close', () => clearInterval(heartbeat));
 
-wss.on('connection', (ws) => {
+// Batas wajar untuk demo 2-orang: mencegah satu skrip menghabiskan RAM
+// free tier dengan ribuan koneksi, atau membanjiri satu ruangan.
+const MAX_CONN = 200, MAX_PER_IP = 10, MAX_MSG_PER_SEC = 30;
+const perIp = new Map();
+const ALLOWED_HOSTS = new Set(['bisik.onrender.com', 'bisik.ednasalam.com']);
+
+wss.on('connection', (ws, req) => {
+  // Cek Origin: situs lain tidak boleh membuka soket dari browser pengunjungnya.
+  // Klien non-browser (tes) tidak mengirim Origin dan dibiarkan lewat.
+  const origin = req.headers.origin;
+  if (origin) {
+    let host = '';
+    try { host = new URL(origin).hostname; } catch { /* origin rusak */ }
+    if (!ALLOWED_HOSTS.has(host) && host !== 'localhost' && host !== '127.0.0.1') { ws.close(1008); return; }
+  }
+  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress;
+  if (wss.clients.size > MAX_CONN || (perIp.get(ip) || 0) >= MAX_PER_IP) { ws.close(1013); return; }
+  perIp.set(ip, (perIp.get(ip) || 0) + 1);
+  ws.on('close', () => perIp.set(ip, Math.max(0, (perIp.get(ip) || 1) - 1)));
+
   let room = null;
   ws.isAlive = true;
   ws.on('pong', () => { ws.isAlive = true; });
+  let winStart = Date.now(), winCount = 0;
 
   ws.on('message', (raw) => {
     let m;
@@ -73,6 +102,9 @@ wss.on('connection', (ws) => {
     }
 
     if (m.type === 'msg' && room && typeof m.data === 'string') {
+      const now = Date.now();
+      if (now - winStart > 1000) { winStart = now; winCount = 0; }
+      if (++winCount > MAX_MSG_PER_SEC) return; // banjir: buang diam-diam
       const set = rooms.get(room);
       const peer = set && [...set].find((p) => p !== ws);
       if (!peer) {

@@ -30,9 +30,11 @@
   terbuka; menutup atau me-refresh halaman akan menghapusnya.</p>
 
   <h2>Kodemu</h2>
-  <p>Kode bersama tidak pernah dikirim ke server. Yang dikirim hanya hash SHA-256
-  dari kode itu, supaya server bisa mempertemukan dua orang yang memakai kode yang
-  sama. Kunci enkripsinya sendiri diturunkan dan dipakai hanya di browser kalian.</p>
+  <p>Kode bersama tidak pernah dikirim ke server. Yang dikirim hanya penanda
+  ruangan — hasil turunan lambat (PBKDF2) dari kode itu, supaya server bisa
+  mempertemukan dua orang yang memakai kode yang sama dan penandanya tidak praktis
+  dipakai untuk menebak kode. Kunci enkripsinya sendiri diturunkan dan dipakai
+  hanya di browser kalian.</p>
 
   <h2>Yang tersimpan di perangkatmu</h2>
   <p>Kalau kamu menginstal Bisik sebagai PWA, browser menyimpan file aplikasinya
