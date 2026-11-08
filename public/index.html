@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bisik</title>
+<meta name="description" content="Chat 1-on-1 terenkripsi. Tanpa akun, tanpa database, pesan hilang begitu sesi selesai.">
+<meta name="theme-color" content="#f59e0b">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<main id="join-screen">
+  <img src="/icon-512.png" alt="" width="96" height="96" class="logo">
+  <h1>Bisik</h1>
+  <p class="tagline">Chat berdua, terenkripsi, tanpa jejak.<br>
+  Tidak ada akun. Tidak ada database. Pesan cuma hidup selama kalian berdua online.</p>
+
+  <label for="code">Kode bersama</label>
+  <input id="code" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"
+         placeholder="mis. senja-kopi-bulan-4821">
+  <div class="row">
+    <button id="gen" type="button" class="ghost">Buat kode acak</button>
+    <button id="enter" type="button" class="primary">Masuk</button>
+  </div>
+  <p id="join-error" class="error" role="alert"></p>
+  <p class="note">Bagikan kode yang <b>sama persis</b> ke temanmu lewat jalur lain
+  (tatap muka / telepon). Kode = kunci enkripsi: yang tidak punya kode tidak bisa
+  membaca, dan kode yang beda artinya ruangan yang beda.
+  Kode pendek gampang ditebak — pakai kode acak atau kode custom yang panjang.</p>
+</main>
+
+<main id="chat-screen" hidden>
+  <header>
+    <div>
+      <strong>Bisik</strong>
+      <div id="status" class="status">Menunggu teman masuk…</div>
+    </div>
+    <div id="fingerprint" title="Samakan kode ini dengan temanmu — kalau sama, kalian memakai kode yang sama"></div>
+    <button id="leave" type="button" class="ghost">Akhiri</button>
+  </header>
+
+  <div id="messages" aria-live="polite"></div>
+
+  <form id="composer">
+    <button id="attach" type="button" class="ghost" aria-label="Kirim gambar">＋ Gambar</button>
+    <input id="file" type="file" accept="image/*" hidden>
+    <input id="text" type="text" autocomplete="off" placeholder="Tulis pesan…" aria-label="Tulis pesan">
+    <button type="submit" class="primary">Kirim</button>
+  </form>
+</main>
+
+<script src="/app.js" type="module"></script>
+</body>
+</html>
