@@ -41,6 +41,12 @@
   and gets guessed — codes like a birthday or "secret123" can be tried by anyone. Your
   IP address also remains visible to the network and the hosting provider, like any
   website.</p>
+  <p>One more, stated plainly: <b>Bisik does not have forward secrecy yet.</b> The same
+  code always derives the same key, so if someone managed to record your encrypted
+  traffic and later learned your code, that recording could be opened. Nothing is
+  stored by Bisik itself, which limits how such a recording could exist — but the
+  property is missing, and we'd rather say so than let you assume it. Until it lands,
+  use a fresh code for each conversation instead of reusing one.</p>
 
   <h2>Tips for staying safe</h2>
   <p>Use the built-in random code, or a long custom code with no personal meaning.

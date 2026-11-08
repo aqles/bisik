@@ -4,7 +4,7 @@ A two-person chat that deliberately keeps nothing.
 
 Bisik is a web app (installable as a PWA) for talking 1-on-1 under encryption. No accounts, no contact lists, no database. Two people enter the same code and talk. End the session and the messages end with it — no history left anywhere.
 
-**Try it live: https://bisik.ednasalam.com** (version 0.4.0)
+**Try it live: https://bisik.ednasalam.com** (version 0.4.1)
 
 ## How to use it
 
@@ -37,11 +37,12 @@ The relay server in the middle only forwards the resulting random-looking encryp
 - **If your friend is offline, the message is gone.** That's a chosen consequence, not a bug. There is no "it'll send when they're back".
 - **Once a session ends, it can't be reopened.** No backups, no recovery.
 - **Bisik is only as strong as its code.** A short or guessable code (a birthday, "secret123") can be tried by others. Use the built-in random code or a long custom one.
+- **No forward secrecy yet.** The same code always derives the same key, so recorded ciphertext plus a later-leaked code would open that recording. Bisik itself stores nothing, which limits the risk — and the [Security page](https://bisik.ednasalam.com/security.html) spells it out. Use a fresh code per conversation.
 - Bisik protects messages in transit and on the server. It can't help if your own device is already compromised, or if the person you're talking to photographs the screen.
 
 ## Run it yourself
 
-Needs Node.js 18+.
+Needs Node.js 20+.
 
 ```bash
 npm install

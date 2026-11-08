@@ -194,4 +194,10 @@ $('#file').addEventListener('change', async () => {
 
 $('#leave').addEventListener('click', () => { leaving = true; location.reload(); }); // reload = everything gone
 
+// Warn before an accidental refresh/close throws the session away — but never
+// when the user ends the session on purpose (that's the reload above).
+window.addEventListener('beforeunload', (e) => {
+  if (key && !leaving) e.preventDefault();
+});
+
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
