@@ -4,14 +4,24 @@ Chat berdua yang sengaja tidak menyimpan apa-apa.
 
 Bisik adalah aplikasi web (bisa diinstal sebagai PWA) untuk mengobrol 1-on-1 secara terenkripsi. Tidak ada akun, tidak ada daftar kontak, tidak ada database. Dua orang memasukkan kode yang sama, lalu mengobrol. Selesai sesi, selesai juga pesannya — tidak ada riwayat yang tertinggal di mana pun.
 
+**Coba langsung: https://bisik.ednasalam.com** (versi 0.3.0)
+
 ## Cara pakai
 
 1. Buka Bisik, buat kode acak atau ketik kode sendiri (minimal 8 karakter).
 2. Bagikan kode itu ke temanmu lewat jalur lain — tatap muka, telepon, kertas. Kode ini kunci enkripsinya, jadi jangan disebar sembarangan.
-3. Temanmu membuka Bisik dan memasukkan kode yang persis sama.
+3. Temanmu membuka Bisik dan memasukkan kode yang persis sama — persis beneran, huruf besar dan kecil dianggap beda.
 4. Mengobrol seperti biasa. Bisa teks dan gambar (maks 5 MB).
 
 Ada sidik jari ruangan 6 karakter di bagian atas layar chat. Samakan dengan punya temanmu — kalau sama, kalian benar-benar memakai kode yang sama.
+
+## Fitur
+
+- **Teks + gambar** sampai 5 MB, semuanya terenkripsi di browser sebelum dikirim.
+- **Sambung ulang otomatis** kalau koneksi putus di tengah jalan (bisa dimatikan), plus tombol "Sambungkan lagi" untuk menyambung manual ke ruangan yang sama tanpa memuat ulang halaman — riwayat di layar tidak hilang.
+- **Halaman Privasi, Syarat, dan Cara kerja keamanan** di dalam aplikasi, ditulis apa adanya: apa yang disimpan (tidak ada), apa yang tetap terlihat oleh penyedia hosting (alamat IP), dan batas perlindungannya.
+- **Batas pemakaian di server**: satu ruangan maksimal 2 orang, ada batas jumlah koneksi dan kecepatan kirim pesan, plus header keamanan standar dan penolakan koneksi dari situs lain.
+- **Bisa diinstal sebagai PWA** dengan ikon generik bergaya catatan — memang sengaja tidak kelihatan seperti aplikasi chat.
 
 ## Kenapa bisa tanpa database
 
@@ -36,16 +46,18 @@ Butuh Node.js 18+.
 ```bash
 npm install
 npm start        # http://localhost:3000
-npm test         # tes ujung-ke-ujung: kode sama, kode beda, penerima offline
+npm test         # tes ujung-ke-ujung (10 pemeriksaan)
 ```
 
-Satu proses Node ini melayani file aplikasinya sekaligus relay WebSocket-nya, jadi deploy-nya cukup di satu tempat yang bisa menjalankan proses Node jangka panjang (misalnya VPS, Fly.io, atau Render) di domain `bisik.ednasalam.com`. Untuk produksi, jalankan di balik HTTPS — WebCrypto dan PWA memang hanya aktif di konteks aman (HTTPS atau localhost).
+Tesnya memakai modul kripto yang sama persis dengan yang dipakai browser, terhadap server beneran: kode sama bisa ngobrol, yang lewat server cuma teks terenkripsi, kode beda tidak nyasar, penerima offline pesannya dibuang, sambung ulang setelah putus kasar, gambar 1 MB terkirim utuh, banjir pesan dipotong di batasnya, dan koneksi dari situs lain ditolak.
+
+Satu proses Node ini melayani file aplikasinya sekaligus relay WebSocket-nya, jadi deploy-nya cukup di satu tempat yang bisa menjalankan proses Node jangka panjang (misalnya VPS, Fly.io, atau Render). Versi yang berjalan di https://bisik.ednasalam.com di-hosting di Render; `render.yaml` di repo ini adalah konfigurasinya. Untuk produksi, jalankan di balik HTTPS — WebCrypto dan PWA memang hanya aktif di konteks aman (HTTPS atau localhost).
 
 ## Isi repo
 
 - `server.js` — server statis + relay WebSocket. Sengaja kecil, silakan dibaca habis sebelum percaya.
-- `public/` — aplikasi web-nya (HTML/CSS/JS polos, tanpa framework, tanpa build).
-- `test/e2e.mjs` — tes yang meniru persis perilaku browser terhadap server beneran.
+- `public/` — aplikasi web-nya (HTML/CSS/JS polos, tanpa framework, tanpa build), termasuk `crypto.js` (semua urusan enkripsi, dipakai bersama oleh aplikasi dan tes) dan halaman `privacy.html`, `terms.html`, `security.html`.
+- `test/e2e.mjs` — tes ujung-ke-ujung terhadap server beneran.
 
 ## Lisensi
 
