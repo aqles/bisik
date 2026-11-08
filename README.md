@@ -66,4 +66,11 @@ This single Node process serves the app files and the WebSocket relay together, 
 
 ## License
 
-MIT
+GNU AGPL-3.0 — see [LICENSE](LICENSE). In plain words: you can use, study,
+modify, and run Bisik, including for other people as a service — but if you
+run a modified version for others, you must publish your modified source
+under this same license. Closing it up and selling it as-is is not allowed.
+
+Releases up to and including v0.4.5 were published under the MIT License;
+those copies stay MIT, as MIT grants can't be taken back. Everything from
+this commit onward is AGPL-3.0.
