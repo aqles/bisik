@@ -72,7 +72,9 @@ button.ghost { background: #fff; border-color: #cbd5e1; color: #0f172a; }
 .doc .updated { color: #64748b; font-size: 14px; }
 .doc footer { margin-top: 40px; }
 
-/* Language switch (EN | ID) — session-only choice, nothing is stored. */
-.lang-switch { display: flex; gap: 8px; justify-content: center; margin-top: 20px; }
+/* Language switch (EN | ID) — small, top-right; session-only choice,
+   nothing is stored. */
+.lang-switch { display: flex; gap: 6px; justify-content: flex-end; }
+.lang-switch button { font-size: 13px; padding: 3px 10px; }
 .lang-switch button[aria-pressed="true"] { font-weight: 700; text-decoration: underline; }
-.doc .lang-switch { justify-content: flex-start; }
+.doc-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }

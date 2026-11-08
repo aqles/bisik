@@ -11,7 +11,13 @@
 </head>
 <body>
 <main class="doc">
-  <a class="back" href="/" data-i18n="back">← Back to Bisik</a>
+  <div class="doc-top">
+    <a class="back" href="/" data-i18n="back">← Back to Bisik</a>
+    <div class="lang-switch" role="group" aria-label="Language / Bahasa">
+      <button type="button" class="ghost" data-lang-set="en" aria-pressed="true">EN</button>
+      <button type="button" class="ghost" data-lang-set="id" aria-pressed="false">ID</button>
+    </div>
+  </div>
   <h1 data-i18n="sec.h1">How Bisik's Security Works</h1>
   <p class="updated" data-i18n="updated">Last updated: November 8, 2026</p>
 
@@ -65,11 +71,6 @@
   Share the code through a different channel than the conversation itself. Compare
   room fingerprints before discussing anything sensitive. End the session when you're
   done.</p>
-
-  <div class="lang-switch" role="group" aria-label="Language / Bahasa">
-    <button type="button" class="ghost" data-lang-set="en" aria-pressed="true">EN</button>
-    <button type="button" class="ghost" data-lang-set="id" aria-pressed="false">ID</button>
-  </div>
 
   <footer class="links">
     <a href="/privacy.html" data-i18n="linkPrivacy">Privacy</a> ·

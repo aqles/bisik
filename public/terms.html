@@ -11,7 +11,13 @@
 </head>
 <body>
 <main class="doc">
-  <a class="back" href="/" data-i18n="back">← Back to Bisik</a>
+  <div class="doc-top">
+    <a class="back" href="/" data-i18n="back">← Back to Bisik</a>
+    <div class="lang-switch" role="group" aria-label="Language / Bahasa">
+      <button type="button" class="ghost" data-lang-set="en" aria-pressed="true">EN</button>
+      <button type="button" class="ghost" data-lang-set="id" aria-pressed="false">ID</button>
+    </div>
+  </div>
   <h1 data-i18n="terms.h1">Terms of Use</h1>
   <p class="updated" data-i18n="updated">Last updated: November 8, 2026</p>
 
@@ -35,11 +41,6 @@
 
   <h2 data-i18n="terms.h2d">Changes</h2>
   <p data-i18n="terms.pd">These terms may change; the latest version always lives on this page.</p>
-
-  <div class="lang-switch" role="group" aria-label="Language / Bahasa">
-    <button type="button" class="ghost" data-lang-set="en" aria-pressed="true">EN</button>
-    <button type="button" class="ghost" data-lang-set="id" aria-pressed="false">ID</button>
-  </div>
 
   <footer class="links">
     <a href="/privacy.html" data-i18n="linkPrivacy">Privacy</a> ·
