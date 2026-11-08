@@ -186,6 +186,17 @@ $('#gen').addEventListener('click', () => {
 
 // shortcut: a random code of 4 words + 4 digits is easy to share but has
 // limited entropy. For serious use, recommend a long custom code (see README).
+$('#copy').addEventListener('click', async () => {
+  const value = $('#code').value.trim();
+  if (!value) { $('#join-error').textContent = 'Enter a code first — or make a random one.'; return; }
+  $('#join-error').textContent = '';
+  try { await navigator.clipboard.writeText(value); }
+  catch { $('#code').select(); document.execCommand('copy'); } // fallback for older browsers
+  const btn = $('#copy'), old = btn.textContent;
+  btn.textContent = 'Copied ✓';
+  setTimeout(() => { btn.textContent = old; }, 1600);
+});
+
 $('#enter').addEventListener('click', async () => {
   // The code is used exactly as typed (capitals are different characters) —
   // forcing lowercase would silently weaken custom codes.

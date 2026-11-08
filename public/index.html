@@ -26,8 +26,11 @@
   No accounts. No database. Messages only live while you're both online.</p>
 
   <label for="code">Shared code</label>
-  <input id="code" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"
-         placeholder="e.g. amber-anchor-lantern-4821">
+  <div class="code-row">
+    <input id="code" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"
+           placeholder="e.g. amber-anchor-lantern-4821">
+    <button id="copy" type="button" class="ghost">Copy</button>
+  </div>
   <div class="row">
     <button id="gen" type="button" class="ghost">Make a random code</button>
     <button id="enter" type="button" class="primary">Join</button>

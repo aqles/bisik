@@ -20,6 +20,8 @@ h1 { font-size: 40px; margin: 12px 0 4px; letter-spacing: -1px; }
   width: 100%; font-size: 18px; padding: 14px;
   border: 2px solid #cbd5e1; border-radius: 12px; background: #fff;
 }
+.code-row { display: flex; gap: 10px; }
+.code-row #code { flex: 1; min-width: 0; }
 .row { display: flex; gap: 10px; margin-top: 12px; }
 .row button { flex: 1; }
 button {
