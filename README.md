@@ -10,6 +10,19 @@ Bisik is a web app (installable as a PWA) for talking 1-on-1 under encryption. N
 
 ![The Bisik join screen — one code field, one button, nothing else](docs/screenshot.png)
 
+## Why Bisik, when Signal exists?
+
+Most secure messengers are built around an account. Signal ties you to a phone number. Session replaces the number with a permanent ID, and holds undelivered messages on its node network for up to 14 days. SimpleX removes the ID entirely — but still asks you to install an app, creates a profile, keeps a database of your conversations on your device, and queues undelivered messages for up to 21 days.
+
+Bisik makes the opposite trade. It is built for a conversation, not an account:
+
+- **No identity at all.** No sign-up, no username, no permanent ID — nothing that ties one conversation to the next. The code is both the room and the key, and you can throw it away when you're done.
+- **Nothing stored, anywhere.** Not "deleted after a while", not "held encrypted on our servers" — never written down in the first place. The server relays from RAM, your browser keeps no chat database, and a message to an offline friend is discarded instead of sitting in a queue for days.
+- **Nothing to install.** No app store, no download record, no trace that you ever used it. Open the page, enter the code, talk. If you do install it, the icon looks like a plain notes app.
+- **Small enough to verify.** One server file, one dependency, no framework. The entire codebase can be read in a single sitting — the strongest privacy claims are the ones you can check yourself.
+
+Other messengers delete your messages. Bisik never stored them.
+
 ## How to use it
 
 1. Open Bisik and make a random code, or type your own (at least 8 characters).
