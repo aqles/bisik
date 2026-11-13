@@ -16,7 +16,8 @@ you want it.
 Bisik's threat model is documented in the app itself, on the
 [Security page](https://bisik.ednasalam.com/security.html) — including what it
 deliberately does *not* protect against (compromised devices, screenshots by
-the other party, weak codes, and the current lack of forward secrecy).
+the other party, weak codes). Forward secrecy is real since v0.5.0 (every
+session negotiates a fresh ephemeral key), so it is no longer on that list.
 Reports about those documented limits are still welcome as discussion, but
 they're known design trade-offs, not vulnerabilities.
 

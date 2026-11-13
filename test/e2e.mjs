@@ -140,6 +140,23 @@ try {
   const spamGot = b.inbox.filter((m) => m.type === 'msg').length;
   check(`flooding: ${spamGot} forwarded <= cap of 30`, spamGot <= 30 && spamGot >= 20);
 
+  // (7b) the cap counts EVERY frame type, not just messages: 40 joins and
+  // 40 acks blasted at once are trimmed the same way
+  const flooder = await client();
+  const { room: floodRoom } = await deriveSession('flood-room-5');
+  for (let i = 0; i < 40; i++) flooder.send(JSON.stringify({ type: 'join', room: floodRoom }));
+  await wait(500);
+  const joinGot = flooder.inbox.filter((m) => m.type === 'joined').length;
+  check(`flooding: join frames also capped (${joinGot} <= 30)`, joinGot <= 30 && joinGot >= 20);
+  flooder.close();
+
+  await wait(1100); // let A's rate window reset after the message flood
+  b.inbox.length = 0;
+  for (let i = 0; i < 40; i++) a.send(JSON.stringify({ type: 'ack', id: 'ack-' + i }));
+  await wait(500);
+  const ackGot = b.inbox.filter((m) => m.type === 'ack').length;
+  check(`flooding: ack frames also capped (${ackGot} <= 30)`, ackGot <= 30 && ackGot >= 20);
+
   // (6) a foreign Origin is rejected before it can join
   const evil = new WebSocket(`ws://localhost:${PORT}`, { headers: { Origin: 'https://evil-site.example' } });
   let evilJoined = false, evilClosed = false;

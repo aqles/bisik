@@ -27,6 +27,11 @@ const HEADERS = {
   'Referrer-Policy': 'no-referrer',
   'X-Robots-Tag': 'noindex, nofollow',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  // Revalidate app files on every load: without this, a browser may keep
+  // serving a stale cached shell (seen during the 2026-11-08 outage) long
+  // after a new version is live. The service worker stays the offline
+  // fallback — this only stops the plain HTTP cache from going stale.
+  'Cache-Control': 'no-cache',
 };
 
 const httpServer = http.createServer(async (req, res) => {
@@ -62,7 +67,7 @@ wss.on('close', () => clearInterval(heartbeat));
 
 // Sane limits for a 2-person chat: stops one script from eating the free
 // tier's RAM with thousands of connections, or flooding a single room.
-const MAX_CONN = 200, MAX_PER_IP = 10, MAX_MSG_PER_SEC = 30;
+const MAX_CONN = 200, MAX_PER_IP = 10, MAX_FRAMES_PER_SEC = 30;
 const perIp = new Map();
 const ALLOWED_HOSTS = new Set(['bisik.onrender.com', 'bisik.ednasalam.com']);
 
@@ -88,6 +93,14 @@ wss.on('connection', (ws, req) => {
   ws.on('message', (raw) => {
     let m;
     try { m = JSON.parse(raw.toString()); } catch { return; }
+
+    // One rate limit for EVERY frame type (join/key/ack/msg): the old code
+    // only counted messages, so a socket could spam joins (flapping the
+    // peer's "friend joined/left" status) or relay huge key frames without
+    // ever hitting the cap. Normal use is a few frames a second at most.
+    const now = Date.now();
+    if (now - winStart > 1000) { winStart = now; winCount = 0; }
+    if (++winCount > MAX_FRAMES_PER_SEC) return; // flooding: drop silently
 
     if (m.type === 'join' && typeof m.room === 'string' && /^[a-f0-9]{64}$/.test(m.room)) {
       let set = rooms.get(m.room);
@@ -129,9 +142,6 @@ wss.on('connection', (ws, req) => {
     }
 
     if (m.type === 'msg' && room && typeof m.data === 'string') {
-      const now = Date.now();
-      if (now - winStart > 1000) { winStart = now; winCount = 0; }
-      if (++winCount > MAX_MSG_PER_SEC) return; // flooding: drop silently
       const set = rooms.get(room);
       const peer = set && [...set].find((p) => p !== ws);
       if (!peer) {

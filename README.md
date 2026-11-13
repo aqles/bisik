@@ -6,7 +6,7 @@ A two-person chat that deliberately keeps nothing.
 
 Bisik is a web app (installable as a PWA) for talking 1-on-1 under encryption. No accounts, no contact lists, no database. Two people enter the same code and talk. End the session and the messages end with it — no history left anywhere.
 
-**Try it live: https://bisik.ednasalam.com** (version 0.6.1)
+**Try it live: https://bisik.ednasalam.com** (version 0.7.0)
 
 ![The Bisik join screen — one code field, one button, nothing else](docs/screenshot.png)
 
@@ -39,7 +39,7 @@ There's a 6-character room fingerprint at the top of the chat screen. Compare it
 - **Automatic reconnect** when the connection drops mid-chat (can be switched off), plus a manual "Reconnect" button that rejoins the same room without reloading the page — the on-screen history survives.
 - **Privacy, Terms, and Security pages** inside the app, written plainly: what is stored (nothing), what the hosting provider can still see (your IP address), and where the protection ends.
 - **Two languages** — English and Bahasa Indonesia, covering the whole app including the Privacy, Terms, and Security pages. The language follows your device; a manual switch lasts only for the session, because the language preference is not stored either.
-- **Server-side limits**: max 2 people per room, caps on total connections and message rate, standard security headers, and WebSocket connections from other websites are refused.
+- **Server-side limits**: max 2 people per room, caps on total connections and on every frame type (30/second per connection — messages, joins, key exchanges, and receipts alike), standard security headers, and WebSocket connections from other websites are refused.
 - **Installable as a PWA** with a generic notes-style icon — deliberately not chat-looking.
 
 ## Why it needs no database
